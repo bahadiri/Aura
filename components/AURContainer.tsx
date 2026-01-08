@@ -92,6 +92,8 @@ export const AURContainer: React.FC<AURContainerProps> = ({ id, children, style 
             onMouseDown={() => focusAUR(id)}
             style={{
                 zIndex: state.zIndex,
+                display: 'flex',
+                flexDirection: 'column',
                 ...style
             }}
             bounds="window"
@@ -114,7 +116,13 @@ export const AURContainer: React.FC<AURContainerProps> = ({ id, children, style 
                     </button>
                 </div>
             </div>
-            <div className={styles.aurContent}>
+            <div className={styles.aurContent} style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                minHeight: 0
+            }}>
                 {children}
             </div>
         </Rnd>

@@ -59,10 +59,11 @@
 
 .aurContent {
     flex: 1;
-    overflow: visible;
+    overflow: hidden;
     padding: 0;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 /* Base Manager Layout */
