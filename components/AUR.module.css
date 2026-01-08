@@ -1,0 +1,121 @@
+.aurWrapper {
+    position: absolute;
+    background: rgba(30, 30, 45, 0.75);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+.aurHeader {
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: default;
+    user-select: none;
+}
+
+.aurTitle {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.aurControls {
+    display: flex;
+    gap: 12px;
+}
+
+.minimizeBtn,
+.closeBtn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0 2px;
+    transition: all 0.2s;
+}
+
+.minimizeBtn:hover {
+    color: #ffcc00;
+    transform: scale(1.1);
+}
+
+.closeBtn:hover {
+    color: #ff4444;
+    transform: scale(1.1);
+}
+
+.aurContent {
+    flex: 1;
+    overflow: visible;
+    padding: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* Base Manager Layout */
+.aurManager {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.aurTray {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 30, 0.8);
+    backdrop-filter: blur(20px);
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: flex;
+    gap: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.trayItem {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.trayItem:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.trayItemActive::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    width: 4px;
+    height: 4px;
+    background: #4cc9f0;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #4cc9f0;
+}
