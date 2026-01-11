@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-export type AURType = 'master' | 'search' | 'info' | 'image' | 'list' | 'custom';
+export type AURType = 'brainstorm' | 'image' | 'list' | 'notes' | 'video' | 'tasks' | 'master' | 'search' | 'info' | 'custom';
 
 export interface AURPosition {
     top?: string | number;
@@ -34,15 +33,15 @@ interface AURContextType {
     focusAUR: (id: string) => void;
     updateAUR: (id: string, patch: Partial<AURState>) => void;
     checkOverlap: (p1?: AURPosition, p2?: AURPosition) => boolean;
-    broadcastSignal: (context: string) => void;
-    currentSignal: string | null;
+    broadcastSignal: (type: string, data?: any) => void;
+    currentSignal: { type: string, data?: any } | null;
 }
 
 const AURContext = createContext<AURContextType | undefined>(undefined);
 
 export const AURProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [aurs, setAurs] = useState<AURState[]>([]);
-    const [currentSignal, setCurrentSignal] = useState<string | null>(null);
+    const [currentSignal, setCurrentSignal] = useState<{ type: string, data?: any } | null>(null);
     const [maxZ, setMaxZ] = useState(10);
 
     const normalizePos = (pos: AURPosition) => {
@@ -173,8 +172,8 @@ export const AURProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ));
     }, []);
 
-    const broadcastSignal = useCallback((context: string) => {
-        setCurrentSignal(context);
+    const broadcastSignal = useCallback((type: string, data?: any) => {
+        setCurrentSignal({ type, data });
         // Reset signal after a pulse
         setTimeout(() => setCurrentSignal(null), 100);
     }, []);
