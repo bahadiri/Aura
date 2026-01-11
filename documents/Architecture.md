@@ -9,7 +9,7 @@ This document details the technical architecture of the Aura system, focusing on
 graph TD
     User[User / Agent] -->|Interacts| Manager[AURManager]
     Manager -->|Reads| Reg[AUR Registry]
-    Manager -->|Render| Space[The Space (Context)]
+    Manager -->|Render| Space["The Space (Context)"]
     
     subgraph "The Space (Context)"
         Space -->|State & Pos| AUR1[Brainstorm AUR]
