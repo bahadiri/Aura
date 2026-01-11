@@ -30,15 +30,15 @@ sequenceDiagram
     participant User
     participant Main as Main (Chat) AUR
     participant Flux as Flux
-    participant Mgr as AURManager
+    participant Prism as Prism (Core)
     participant Space as The Space
     participant Weather as Weather AUR
 
     User->>Main: "What's the weather in London?"
     Main->>Flux: Emits HU { type: "INTENT_WEATHER", data: "London" }
-    Flux->>Mgr: Broadcasts HU
-    Note over Mgr: Analyzes HU &<br/>Checks Registry
-    Mgr->>Space: Spawns 'weather-aur'
+    Flux->>Prism: Broadcasts HU
+    Note over Prism: Analyzes HU &<br/>Checks Registry
+    Prism->>Space: Spawns 'weather-aur'
     Space->>Weather: Mounts with props { city: "London" }
     Weather-->>User: Displays Forecast
 ```
@@ -55,11 +55,11 @@ sequenceDiagram
         }
     });
     ```
-3.  **Flux Propagation**: The Flux Bus carries this HU to the `AURManager`.
-4.  **Manager Decision**: The `AURManager` analyzes the HU:
+3.  **Flux Propagation**: The Flux Bus carries this HU to the `Prism`.
+4.  **Prism Decision**: The `Prism` analyzes the HU:
     -   *Intent*: `WEATHER_CHECK`
     -   *Registry Lookup*: Finds `weather-aur` matches this intent.
-5.  **Spawning**: The Manager updates **The Space (UI)** to include the new window, passing `{ city: 'London' }` as props.
+5.  **Spawning**: The Prism updates **The Space (UI)** to include the new window, passing `{ city: 'London' }` as props.
 6.  **Response**: The new AUR appears instantly in the visual environment, displaying the forecast.
 
 ---
