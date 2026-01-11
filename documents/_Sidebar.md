@@ -6,7 +6,8 @@
 - **Technical Reference**
   - [Architecture](Architecture)
   - [System Diagram](Architecture#system-diagram)
-  - [The Registry](Architecture#the-registry)
+  - [The Atmosphere](Atmosphere)
+  - [Flux Protocol](Flux)
 
 - **Guides**
   - [Developer Guide](Developer-Guide)

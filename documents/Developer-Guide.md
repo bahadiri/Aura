@@ -36,7 +36,7 @@ sequenceDiagram
     User->>Brainstorm: "What's the weather in London?"
     Brainstorm->>Flux: Emits HU { type: "INTENT_WEATHER", data: "London" }
     Flux->>Caster: Broadcasts HU
-    Note over Caster: Analyzes HU &<br/>Checks Registry
+    Note over Caster: Analyzes HU &<br/>Checks Atmosphere
     Caster->>Space: Spawns 'weather-aur'
     Space->>Weather: Mounts with props { city: "London" }
     Weather-->>User: Displays Forecast
@@ -46,7 +46,8 @@ sequenceDiagram
 1.  **User Request**: User chats with the Brainstorm AIR: *"What's the weather in London?"*
 2.  **HU Emission**: The Brainstorm AIR processes this and emits a Holographic Update (HU) to the Flux.
     ```typescript
-    broadcastSignal('HU', {
+    flux.dispatch({
+        to: 'caster', // Targeted to the System Core
         type: 'INTENT_DETECTED',
         payload: {
             intent: 'WEATHER_CHECK',
@@ -54,10 +55,9 @@ sequenceDiagram
         }
     });
     ```
-3.  **Flux Propagation**: The Flux Bus carries this HU to the `Caster`.
-4.  **Caster Decision**: The `Caster` analyzes the HU:
+3.  **Caster Decision**: The `Caster` (listening to Flux) analyzes the HU:
     -   *Intent*: `WEATHER_CHECK`
-    -   *Registry Lookup*: Finds `weather-air` matches this intent.
+    -   *Atmosphere Lookup*: Finds `weather-air` matches this intent.
 5.  **Spawning**: The Caster updates **The Space (UI)** to include the new window, passing `{ city: 'London' }` as props.
 6.  **Response**: The new AIR appears instantly in the visual environment, displaying the forecast.
 
@@ -79,9 +79,9 @@ interface WeatherProps {
 
 export const WeatherView: React.FC<WeatherProps> = ({ city = "London" }) => {
     // Listen for Flux updates (e.g., if a user selects a city in another map AIR)
-    useAURSignal((signal, data) => {
-        if (signal === 'HU' && data.type === 'CITY_SELECTED') {
-            console.log("New city selected via HU:", data.payload.city);
+    useAURSignal((message) => {
+        if (message.type === 'CITY_SELECTED') {
+            console.log("New city selected via Flux:", message.payload.city);
         }
     });
 
@@ -102,9 +102,9 @@ export const WeatherView: React.FC<WeatherProps> = ({ city = "London" }) => {
 In the same file (or a separate one if you prefer), define the metadata and AI instructions.
 
 ```tsx
-import { AURManifest } from '../../registry';
+import { AIRManifest } from '../../atmosphere';
 
-export const WeatherAIR: AURManifest = {
+export const WeatherAIR: AIRManifest = {
     id: 'weather-air',
     component: WeatherView,
     meta: {
@@ -123,14 +123,12 @@ export const WeatherAIR: AURManifest = {
 
 ## Step 3: Register the AIR
 
-Finally, import your manifest in `registry.ts` and register it.
-
 **`src/registry.ts`**
 ```typescript
-import { WeatherAIR } from './components/aurs/WeatherAUR';
-
+import { atmosphere } from '../../atmosphere';
+ 
 // ...
-auraRegistry.register(WeatherAIR);
+atmosphere.register(WeatherAIR);
 ```
 
 ## Best Practices

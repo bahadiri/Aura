@@ -38,12 +38,12 @@ graph TD
 1.  **Control the UI**: It holds the ultimate authority over "The Space." It decides what is rendered, where it is placed, and when it is removed.
 2.  **Make Smart Decisions**: It listens to the **Flux** and "Casts" raw information into actions. If an HU contains a weather intent, the Caster decides to spawn a Weather AUR. It dynamically starts, ends, or modifies UI elements based on the data stream.
 
-## The New AIR Standard (`AURManifest`)
+## The AIR Standard (v0.1) (`AIRManifest`)
 
 Every valid component in the Aura system must adhere to the `AURManifest` interface. This ensures that the system can validate, manage, and "understand" the capabilities of every window.
 
 ```typescript
-export interface AURManifest {
+export interface AIRManifest {
     id: string; // Unique identifier (e.g., 'weather-aur')
     component: React.ComponentType<any>; // The React Component to render
     meta: {
@@ -59,25 +59,15 @@ export interface AURManifest {
 }
 ```
 
-## The Registry
+## [[The Atmosphere]] (Registry)
 
-The `auraRegistry` is a singleton service that acts as the gatekeeper for the system.
+The Atmosphere acts as the gatekeeper, validating and indexing all available AIRs.
+*See full documentation: [[Atmosphere]]*
 
--   **Validation**: When `registry.register(manifest)` is called, it strictly validates that all required fields (id, component, meta) are present.
--   **Discovery**: It provides methods like `getAll()` and `getComponentMap()` for the `Caster` to dynamically instantiate components.
+## Data Flow: [[Flux]]
 
-## Data Flow: Flux & HUs
-
-The communication system consists of two parts:
--   **Flux**: The active *Space* or bus that permeates the environment.
--   **HU (Holographic Update)**: The structured *message* payload traveling through the Flux.
-
-For a detailed example of how these work together (including diagrams), see the [Developer Guide: Intelligent Orchestration](Developer-Guide.md#scenario-intelligent-orchestration).
-
-1.  **Emission**: An AIR calls `broadcastSignal('HU', { type: 'INTENT', payload: ... })`.
-2.  **Propagation**: The `AURContext` receives this HU and "pulses" it through the Flux.
-3.  **Reception**: The `Caster` (or other AIRs) intercept the HU and react (e.g., by spawning new windows).
-    ```
+Flux is the targeted, bidirectional signaling protocol connecting the Caster and AIRs.
+*See full documentation: [[Flux]]*
 
 ## State Management
 

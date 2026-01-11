@@ -19,7 +19,7 @@ Aura is built on three pillars:
 
 -   **Spatial Awareness**: Windows (AIRs) know where they are relative to others. They can avoid overlapping, snap to grids, or "Orbit" related content.
 -   **Agentic Core**: Every AIR is designed to be AI-native. They expose standard interfaces (`instructions`, `static_code`) that allow the **Caster** (Central Intelligence) to control them programmatically.
--   **Extensibility**: The system is built on a dynamic `Registry`. New AIRs can be added at runtime, similar to installing a plugin or an NPM package.
+-   **Extensibility**: The system is built on a dynamic `Atmosphere` (Registry). New AIRs can be added at runtime, similar to installing a plugin or an NPM package.
 
 ## Use Cases
 
@@ -29,5 +29,5 @@ Aura is built on three pillars:
 
 ## Documentation Index
 
-- [Architecture](documents/Architecture.md): Deep dive into the Registry, Flux Protocol, and Manifests.
+- [Architecture](documents/Architecture.md): Deep dive into the Atmosphere, Flux Protocol, and Manifests.
 - [Developer Guide](documents/Developer-Guide.md): Step-by-step tutorial on creating new AIRs.
