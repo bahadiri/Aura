@@ -1,15 +1,15 @@
 
 # 🌌 Aura System Overview
 
-Aura is a **spatial, agentic window manager** designed for the AI age. It rethinks the traditional desktop interface by replacing static windows with "Adaptive User Representatives" (AURs) that live in a shared, reactive environment called **The Space**.
+Aura is a **spatial, agentic window manager** designed for the AI age. It rethinks the traditional desktop interface by replacing static windows with "Agentic User Respondents" (AURs) that live in a shared, reactive environment called **The Space**.
 
 ## Core Philosophy
 
 Aura is built on three pillars:
 
 1.  **The Space (Environment)**: A shared, limitless canvas where all applications coexist. Unlike a desktop, The Space is aware of the relationships between windows.
-2.  **AURs (Adaptive User Representatives)**: More than just "apps" or "components," AURs are self-contained agents. They have their own UI, logic, and even "prompt libraries" that allow them to interact with LLMs autonomously.
-3.  **HU (Hyper-Update)**: The communication bus that binds the system together. It's a high-speed, holographic signaling protocol that allows AURs to broadcast their state, intent, or data to any other AUR in The Space.
+2.  **AURs (Agentic User Respondents)**: More than just "apps" or "components," AURs are self-contained agents. They have their own UI, logic, and even "prompt libraries" that allow them to interact with LLMs autonomously.
+3.  **Flux (Communication)**: The communication bus that binds the system together. It's a high-speed, holographic signaling protocol that allows AURs to broadcast their state, intent, or data to any other AUR in The Space.
 
 ## Key Features
 
@@ -20,7 +20,7 @@ Aura is built on three pillars:
 ## Use Cases
 
 -   **Creative Workflows**: A [[Brainstorm AUR|Standard AURs#brainstorm]] can spawn an [[Image AUR|Standard AURs#image]] to visualize ideas.
--   **Data Analysis**: A [[Query AUR|Standard AURs#query]] can broadcast a selected dataset via [[Architecture#data-flow-the-hu-hyper-update]].
+-   **Data Analysis**: A [[Query AUR|Standard AURs#query]] can broadcast a selected dataset via [[Architecture#data-flow-flux]].
 -   **Complex Dashboards**: Build mission-control style interfaces where every panel is aware of the others context.
 
 ## Documentation Index

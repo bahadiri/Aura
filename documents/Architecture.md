@@ -21,8 +21,8 @@ graph TD
         Space -->|State & Pos| AUR3[Custom AUR]
     end
 
-    AUR1 -->|"Emit HU (Signal)"| Bus[HU Bus]
-    AUR2 -->|"Emit HU (Signal)"| Bus
+    AUR1 -->|"Emit Flux"| Bus[Flux Bus]
+    AUR2 -->|"Emit Flux"| Bus
     Bus -.->|Resonance| AUR3
     Bus -.->|Resonance| AUR1
 ```
@@ -55,9 +55,9 @@ The `auraRegistry` is a singleton service that acts as the gatekeeper for the sy
 -   **Validation**: When `registry.register(manifest)` is called, it strictly validates that all required fields (id, component, meta) are present.
 -   **Discovery**: It provides methods like `getAll()` and `getComponentMap()` for the `AURManager` to dynamically instantiate components.
 
-## Data Flow: The HU (Hyper-Update)
+## Data Flow: Flux
 
-Communication between AURs is decoupled using the "Hyper-Update" (HU) protocol. This is essentially a pub/sub event bus optimized for the Aura ecosystem.
+Communication between AURs is decoupled using the "Flux" protocol. This is essentially a pub/sub event bus optimized for the Aura ecosystem.
 
 1.  **Emission**: An AUR calls `broadcastSignal('SELECTED_EPISODE', { id: 1 })`.
 2.  **Propagation**: The `AURContext` receives this signal and "pulses" it through the system.

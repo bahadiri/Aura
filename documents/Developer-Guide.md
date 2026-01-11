@@ -36,7 +36,7 @@ interface WeatherProps {
 }
 
 export const WeatherView: React.FC<WeatherProps> = ({ city = "London" }) => {
-    // Listen for HU updates (e.g., if a user selects a city in another map AUR)
+    // Listen for Flux updates (e.g., if a user selects a city in another map AUR)
     useAURSignal((signal, data) => {
         if (signal === 'CITY_SELECTED') {
             console.log("New city selected:", data.city);
@@ -94,6 +94,6 @@ auraRegistry.register(WeatherAUR);
 ## Best Practices
 
 1.  **Use `AURs.module.css`**: Do not create custom CSS files unless absolutely necessary. The shared module ensures visual consistency (padding, scrollbars, colors).
-2.  **Stateless is Better**: Try to keep your AURs stateless. Rely on the `data` prop passed from the `AURManager` or signals from the `HU` bus.
+2.  **Stateless is Better**: Try to keep your AURs stateless. Rely on the `data` prop passed from the `AURManager` or signals from the `Flux` bus.
 3.  **Unique IDs**: Choose a unique, descriptive ID (e.g., `youtube-player` instead of `video`).
 4.  **Graceful Loading**: Always handle empty states or loading states (use the `.hourglass` class from generic styles).
