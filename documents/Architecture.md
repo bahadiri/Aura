@@ -13,7 +13,7 @@ This document details the technical architecture of the Aura system, focusing on
 graph TD
     User((User)) -->|Interacts| AUR1[Brainstorm AUR]
     
-    Prism["Prism (Core System)"]
+    Prism[Prism]
     Flux[Flux]
     
     Prism <==>|Refracts| Flux
@@ -31,7 +31,7 @@ graph TD
     Flux -.->|"HU"| AUR1
 ```
 
-## The Prism (Core System)
+## The Prism
 
 **The Prism** (formerly AURManager) is the intelligent core of Aura. Its mission is to:
 

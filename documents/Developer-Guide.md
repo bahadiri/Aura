@@ -30,7 +30,7 @@ sequenceDiagram
     participant User
     participant Brainstorm as Brainstorm AUR
     participant Flux as Flux
-    participant Prism as Prism (Core)
+    participant Prism as Prism
     participant Space as The Space
     participant Weather as Weather AUR
 
