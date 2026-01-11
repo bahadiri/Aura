@@ -59,8 +59,8 @@ sequenceDiagram
 4.  **Manager Decision**: The `AURManager` analyzes the HU:
     -   *Intent*: `WEATHER_CHECK`
     -   *Registry Lookup*: Finds `weather-aur` matches this intent.
-5.  **Spawning**: The Manager spawns the `WeatherAUR` into The Space, passing `{ city: 'London' }` as props.
-6.  **Response**: The new AUR appears instantly, displaying the forecast.
+5.  **Spawning**: The Manager updates **The Space (UI)** to include the new window, passing `{ city: 'London' }` as props.
+6.  **Response**: The new AUR appears instantly in the visual environment, displaying the forecast.
 
 ---
 

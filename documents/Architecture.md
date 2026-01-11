@@ -5,26 +5,28 @@
 
 # 🏗️ Aura Architecture
 
-This document details the technical architecture of the Aura system, focusing on the interactions between the Registry, the Context ("The Space"), and the individual AURs.
+This document details the technical architecture of the Aura system, focusing on the interactions between the Registry, the Context (**"The Space"** - *The Visual UI Layer*), and the individual AURs.
 
 ## System Diagram
 
 ```mermaid
 graph TD
-    User[User / Agent] -->|Interacts| Manager[AURManager]
-    Manager -->|Reads| Reg[AUR Registry]
-    Manager -->|Render| Space["The Space (Context)"]
+    User[User / Agent] -->|Interacts| MainAUR[Main / Chat AUR]
+    MainAUR -->|"Emit HU (Message)"| Flux[Flux Bus]
     
-    subgraph "The Space (Context)"
-        Space -->|State & Pos| AUR1[Brainstorm AUR]
-        Space -->|State & Pos| AUR2[Image AUR]
-        Space -->|State & Pos| AUR3[Custom AUR]
+    Flux -->|Listens| Manager[AURManager]
+    Manager -->|Updates| Space["The Space (UI Layer)"]
+    
+    subgraph "The Space (UI Layer)"
+        Space -->|Renders| AUR1[Brainstorm AUR]
+        Space -->|Renders| AUR2[Image AUR]
+        Space -->|Renders| AUR3[Custom AUR]
     end
 
-    AUR1 -->|"Emit Flux"| Bus[Flux Bus]
-    AUR2 -->|"Emit Flux"| Bus
-    Bus -.->|Resonance| AUR3
-    Bus -.->|Resonance| AUR1
+    AUR1 -->|"Emit HU"| Flux
+    AUR2 -->|"Emit HU"| Flux
+    Flux -.->|Resonance| AUR3
+    Flux -.->|Resonance| AUR1
 ```
 
 ## The New AUR Standard (`AURManifest`)
