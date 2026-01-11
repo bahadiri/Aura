@@ -1,11 +1,10 @@
 
-
 > **💿 Aura Documentation**
 > [🏠 Home](../README.md) &nbsp; • &nbsp; [🏗️ Architecture](Architecture.md) &nbsp; • &nbsp; [👩‍💻 Developer Guide](Developer-Guide.md)
 
 # 👩‍💻 Developer Guide: Creating AURs
 
-This guide walks you through creating a new Adaptive User Representative (AUR) and registering it with the Aura system.
+This guide walks you through creating a new Agentic User Respondent (AUR) and registering it with the Aura system.
 
 ## The Anatomy of an AUR
 
@@ -20,6 +19,32 @@ const WeatherAURManifest: AURManifest = {
     instructions: { ... }
 };
 ```
+
+## Scenario: Intelligent Orchestration
+
+Let's walk through a real-world example: **The Weather Interaction**.
+In this scenario, we want to show how a user's request propagates through Flux using HUs to spawn the correct AUR.
+
+### The Flow
+1.  **User Request**: User chats with the Main AUR: *"What's the weather in London?"*
+2.  **HU Emission**: The Main AUR processes this and emits a Holographic Update (HU) to the Flux.
+    ```typescript
+    broadcastSignal('HU', {
+        type: 'INTENT_DETECTED',
+        payload: {
+            intent: 'WEATHER_CHECK',
+            entities: { location: 'London' }
+        }
+    });
+    ```
+3.  **Flux Propagation**: The Flux Bus carries this HU to the `AURManager`.
+4.  **Manager Decision**: The `AURManager` analyzes the HU:
+    -   *Intent*: `WEATHER_CHECK`
+    -   *Registry Lookup*: Finds `weather-aur` matches this intent.
+5.  **Spawning**: The Manager spawns the `WeatherAUR` into The Space, passing `{ city: 'London' }` as props.
+6.  **Response**: The new AUR appears instantly, displaying the forecast.
+
+---
 
 ## Step 1: Create the Component
 
@@ -38,8 +63,8 @@ interface WeatherProps {
 export const WeatherView: React.FC<WeatherProps> = ({ city = "London" }) => {
     // Listen for Flux updates (e.g., if a user selects a city in another map AUR)
     useAURSignal((signal, data) => {
-        if (signal === 'CITY_SELECTED') {
-            console.log("New city selected:", data.city);
+        if (signal === 'HU' && data.type === 'CITY_SELECTED') {
+            console.log("New city selected via HU:", data.payload.city);
         }
     });
 

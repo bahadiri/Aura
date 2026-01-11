@@ -55,19 +55,36 @@ The `auraRegistry` is a singleton service that acts as the gatekeeper for the sy
 -   **Validation**: When `registry.register(manifest)` is called, it strictly validates that all required fields (id, component, meta) are present.
 -   **Discovery**: It provides methods like `getAll()` and `getComponentMap()` for the `AURManager` to dynamically instantiate components.
 
-## Data Flow: Flux
+## Data Flow: Flux & HUs
 
-Communication between AURs is decoupled using the "Flux" protocol. This is essentially a pub/sub event bus optimized for the Aura ecosystem.
+The communication system consists of two parts:
+-   **Flux**: The active *"Ether"* or bus that permeates the Space.
+-   **HU (Holographic Update)**: The structured *message* payload traveling through the Flux.
 
-1.  **Emission**: An AUR calls `broadcastSignal('SELECTED_EPISODE', { id: 1 })`.
-2.  **Propagation**: The `AURContext` receives this signal and "pulses" it through the system.
-3.  **Reception**: Other AURs use the `useAURSignal()` hook to listen for relevant updates:
-    ```typescript
-    useAURSignal((signal: string, data: any) => {
-        if (signal === 'SELECTED_EPISODE') {
-             // React to the change
-        }
-    });
+### Scenario: Intelligent Orchestration
+When a user asks about the weather, the system orchestrates a response using Flux.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Main as Main (Chat) AUR
+    participant Flux as Flux Bus
+    participant Mgr as AURManager
+    participant Space as The Space
+    participant Weather as Weather AUR
+
+    User->>Main: "What's the weather in London?"
+    Main->>Flux: Emits HU { type: "INTENT_WEATHER", data: "London" }
+    Flux->>Mgr: Broadcasts HU
+    Note over Mgr: Analyzes HU &<br/>Checks Registry
+    Mgr->>Space: Spawns 'weather-aur'
+    Space->>Weather: Mounts with props { city: "London" }
+    Weather-->>User: Displays Forecast
+```
+
+1.  **Emission**: An AUR calls `broadcastSignal('HU', { type: 'INTENT', payload: ... })`.
+2.  **Propagation**: The `AURContext` receives this HU and "pulses" it through the Flux.
+3.  **Reception**: The `AURManager` (or other AURs) intercept the HU and react (e.g., by spawning new windows).
     ```
 
 ## State Management
