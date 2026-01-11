@@ -11,7 +11,7 @@ This document details the technical architecture of the Aura system, focusing on
 
 ```mermaid
 graph TD
-    User[User / Agent] -->|Interacts| MainAUR[Main / Chat AUR]
+    User((User)) -->|Interacts| AUR1[Brainstorm AUR]
     
     Prism["Prism (Core System)"]
     Flux[Flux]
@@ -20,17 +20,15 @@ graph TD
     Prism ==>|Updates| Space
 
     subgraph Space ["The Space"]
-        MainAUR
-        AUR1[Brainstorm AUR]
+        AUR1
         AUR2[Image AUR]
         AUR3[Custom AUR]
     end
 
-    MainAUR -->|"HU"| Flux
     AUR1 -->|"HU"| Flux
     Flux -.->|"HU"| AUR2
     Flux -.->|"HU"| AUR3
-    Flux -.->|"HU"| MainAUR
+    Flux -.->|"HU"| AUR1
 ```
 
 ## The Prism (Core System)

@@ -28,14 +28,14 @@ In this scenario, we want to show how a user's request propagates through Flux u
 ```mermaid
 sequenceDiagram
     participant User
-    participant Main as Main (Chat) AUR
+    participant Brainstorm as Brainstorm AUR
     participant Flux as Flux
     participant Prism as Prism (Core)
     participant Space as The Space
     participant Weather as Weather AUR
 
-    User->>Main: "What's the weather in London?"
-    Main->>Flux: Emits HU { type: "INTENT_WEATHER", data: "London" }
+    User->>Brainstorm: "What's the weather in London?"
+    Brainstorm->>Flux: Emits HU { type: "INTENT_WEATHER", data: "London" }
     Flux->>Prism: Broadcasts HU
     Note over Prism: Analyzes HU &<br/>Checks Registry
     Prism->>Space: Spawns 'weather-aur'
@@ -44,8 +44,8 @@ sequenceDiagram
 ```
 
 ### The Flow
-1.  **User Request**: User chats with the Main AUR: *"What's the weather in London?"*
-2.  **HU Emission**: The Main AUR processes this and emits a Holographic Update (HU) to the Flux.
+1.  **User Request**: User chats with the Brainstorm AUR: *"What's the weather in London?"*
+2.  **HU Emission**: The Brainstorm AUR processes this and emits a Holographic Update (HU) to the Flux.
     ```typescript
     broadcastSignal('HU', {
         type: 'INTENT_DETECTED',
