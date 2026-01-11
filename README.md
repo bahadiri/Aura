@@ -1,7 +1,7 @@
 
 
 > **💿 Aura Documentation**
-> [🏠 Home](README.md) &nbsp; • &nbsp; [🏗️ Architecture](documents/Architecture.md) &nbsp; • &nbsp; [👩‍💻 Developer Guide](documents/Developer-Guide.md)
+
 
 # 🌌 Aura System Overview
 
@@ -27,7 +27,6 @@ Aura is built on three pillars:
 -   **Data Analysis**: A [Query AIR](documents/Developer-Guide.md#standard-aursquery) can broadcast a selected dataset via [Flux](documents/Architecture.md#data-flow-flux).
 -   **Complex Dashboards**: Build mission-control style interfaces where every panel is aware of the others context.
 
-## Documentation Index
+## Documentation
 
-- [Architecture](documents/Architecture.md): Deep dive into the Atmosphere, Flux Protocol, and Manifests.
-- [Developer Guide](documents/Developer-Guide.md): Step-by-step tutorial on creating new AIRs.
+Full documentation is available in the [Project Wiki](https://github.com/bahadiri/Aura/wiki).

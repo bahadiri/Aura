@@ -1,7 +1,6 @@
 
 
-> **💿 Aura Documentation**
-> [🏠 Home](../README.md) &nbsp; • &nbsp; [🏗️ Architecture](Architecture.md) &nbsp; • &nbsp; [👩‍💻 Developer Guide](Developer-Guide.md)
+
 
 # 🏗️ Aura Architecture
 

@@ -23,8 +23,4 @@ Aura is built on three pillars:
 -   **Data Analysis**: A [[Query AIR|Standard AIRs#query]] can broadcast a selected dataset via [[Flux]].
 -   **Complex Dashboards**: Build mission-control style interfaces where every panel is aware of the others context.
 
-## Documentation Index
 
-- [[Architecture]]: Deep dive into the [[Atmosphere]], [[Flux]], and Manifests.
-- [[Developer Guide]]: Step-by-step tutorial on creating new AIRs.
-- [GitHub Repository](https://github.com/my-org/aura)
