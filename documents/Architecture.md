@@ -17,8 +17,8 @@ graph TD
         Space -->|State & Pos| AUR3[Custom AUR]
     end
 
-    AUR1 -->|Emit HU (Signal)| Bus[HU Bus]
-    AUR2 -->|Emit HU (Signal)| Bus
+    AUR1 -->|"Emit HU (Signal)"| Bus[HU Bus]
+    AUR2 -->|"Emit HU (Signal)"| Bus
     Bus -.->|Resonance| AUR3
     Bus -.->|Resonance| AUR1
 ```
