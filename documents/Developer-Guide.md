@@ -2,7 +2,7 @@
 
 # 👩‍💻 Developer Guide: Creating AIRs
 
-This guide walks you through creating a new Agentic Interactive Respondent (AIR) and registering it with the Aura system.
+This guide walks you through creating a new Agentic Interface Respondent (AIR) and registering it with the Aura system.
 
 ## The Anatomy of an AIR
 
@@ -28,15 +28,15 @@ sequenceDiagram
     participant User
     participant Brainstorm as Brainstorm AIR
     participant Flux as Flux
-    participant Caster as Caster
+    participant Controller as Controller
     participant Space as The Space
     participant Weather as Weather AIR
 
     User->>Brainstorm: "What's the weather in London?"
     Brainstorm->>Flux: Emits HU { type: "INTENT_WEATHER", data: "London" }
-    Flux->>Caster: Broadcasts HU
-    Note over Caster: Analyzes HU &<br/>Checks Atmosphere
-    Caster->>Space: Spawns 'weather-aur'
+    Flux->>Controller: Broadcasts HU
+    Note over Controller: Analyzes HU &<br/>Checks Atmosphere
+    Controller->>Space: Spawns 'weather-aur'
     Space->>Weather: Mounts with props { city: "London" }
     Weather-->>User: Displays Forecast
 ```
@@ -46,7 +46,7 @@ sequenceDiagram
 2.  **HU Emission**: The Brainstorm AIR processes this and emits a Holographic Update (HU) to the Flux.
     ```typescript
     flux.dispatch({
-        to: 'caster', // Targeted to the System Core
+        to: 'controller', // Targeted to the System Core
         type: 'INTENT_DETECTED',
         payload: {
             intent: 'WEATHER_CHECK',
@@ -54,10 +54,10 @@ sequenceDiagram
         }
     });
     ```
-3.  **Caster Decision**: The `Caster` (listening to Flux) analyzes the HU:
+3.  **Controller Decision**: The `Controller` (listening to Flux) analyzes the HU:
     -   *Intent*: `WEATHER_CHECK`
     -   *Atmosphere Lookup*: Finds `weather-air` matches this intent.
-5.  **Spawning**: The Caster updates **The Space (UI)** to include the new window, passing `{ city: 'London' }` as props.
+5.  **Spawning**: The Controller updates **The Space (UI)** to include the new window, passing `{ city: 'London' }` as props.
 6.  **Response**: The new AIR appears instantly in the visual environment, displaying the forecast.
 
 ---
@@ -133,6 +133,6 @@ atmosphere.register(WeatherAIR);
 ## Best Practices
 
 1.  **Use `AURs.module.css`**: Do not create custom CSS files unless absolutely necessary. The shared module ensures visual consistency (padding, scrollbars, colors).
-2.  **Stateless is Better**: Try to keep your AIRs stateless. Rely on the `data` prop passed from the `Caster` or signals from the `Flux` bus.
+2.  **Stateless is Better**: Try to keep your AIRs stateless. Rely on the `data` prop passed from the `Controller` or signals from the `Flux` bus.
 3.  **Unique IDs**: Choose a unique, descriptive ID (e.g., `youtube-player` instead of `video`).
 4.  **Graceful Loading**: Always handle empty states or loading states (use the `.hourglass` class from generic styles).

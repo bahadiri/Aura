@@ -12,11 +12,11 @@ This document details the technical architecture of the Aura system, focusing on
 graph TD
     User((User)) -->|Interacts| AUR1[Brainstorm AIR]
     
-    Caster[Caster]
+    Controller[Controller]
     Flux[Flux]
     
-    Caster <==>|Refracts| Flux
-    Caster ==>|Updates| Space
+    Controller <==>|Refracts| Flux
+    Controller ==>|Updates| Space
 
     subgraph Space ["The Space"]
         AUR1
@@ -30,12 +30,13 @@ graph TD
     Flux -.->|"HU"| AUR1
 ```
 
-## The Caster
+## The Controller
 
-**The Caster** (formerly Manager) is the intelligent core of Aura. Its mission is to:
+**The Controller** (formerly Manager/Caster) is the intelligent core of Aura. Its mission is to:
+
 
 1.  **Control the UI**: It holds the ultimate authority over "The Space." It decides what is rendered, where it is placed, and when it is removed.
-2.  **Make Smart Decisions**: It listens to the **Flux** and "Casts" raw information into actions. If an HU contains a weather intent, the Caster decides to spawn a Weather AUR. It dynamically starts, ends, or modifies UI elements based on the data stream.
+2.  **Make Smart Decisions**: It listens to the **Flux** and "Casts" raw information into actions. If an HU contains a weather intent, the Controller decides to spawn a Weather AUR. It dynamically starts, ends, or modifies UI elements based on the data stream.
 
 ## The AIR Standard (v0.1) (`AIRManifest`)
 
@@ -65,7 +66,7 @@ The Atmosphere acts as the gatekeeper, validating and indexing all available AIR
 
 ## Data Flow: [[Flux]]
 
-Flux is the targeted, bidirectional signaling protocol connecting the Caster and AIRs.
+Flux is the targeted, bidirectional signaling protocol connecting the Controller and AIRs.
 *See full documentation: [[Flux]]*
 
 ## State Management
