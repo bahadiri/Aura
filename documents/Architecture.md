@@ -33,7 +33,7 @@ graph TD
 
 ## The Prism
 
-**The Prism** (formerly AURManager) is the intelligent core of Aura. Its mission is to:
+**The Prism** (formerly Manager) is the intelligent core of Aura. Its mission is to:
 
 1.  **Control the UI**: It holds the ultimate authority over "The Space." It decides what is rendered, where it is placed, and when it is removed.
 2.  **Make Smart Decisions**: It listens to the **Flux** and "refracts" raw information into actions. If an HU contains a weather intent, the Prism decides to spawn a Weather AUR. It dynamically starts, ends, or modifies UI elements based on the data stream.
