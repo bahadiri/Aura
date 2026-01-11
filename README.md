@@ -29,5 +29,5 @@ Aura is built on three pillars:
 
 ## Documentation Index
 
-- [Architecture](documents/Architecture.md): Deep dive into the Registry, HU Protocol, and Manifests.
+- [Architecture](documents/Architecture.md): Deep dive into the Registry, Flux Protocol, and Manifests.
 - [Developer Guide](documents/Developer-Guide.md): Step-by-step tutorial on creating new AURs.

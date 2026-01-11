@@ -25,6 +25,24 @@ const WeatherAURManifest: AURManifest = {
 Let's walk through a real-world example: **The Weather Interaction**.
 In this scenario, we want to show how a user's request propagates through Flux using HUs to spawn the correct AUR.
 
+```mermaid
+sequenceDiagram
+    participant User
+    participant Main as Main (Chat) AUR
+    participant Flux as Flux Bus
+    participant Mgr as AURManager
+    participant Space as The Space
+    participant Weather as Weather AUR
+
+    User->>Main: "What's the weather in London?"
+    Main->>Flux: Emits HU { type: "INTENT_WEATHER", data: "London" }
+    Flux->>Mgr: Broadcasts HU
+    Note over Mgr: Analyzes HU &<br/>Checks Registry
+    Mgr->>Space: Spawns 'weather-aur'
+    Space->>Weather: Mounts with props { city: "London" }
+    Weather-->>User: Displays Forecast
+```
+
 ### The Flow
 1.  **User Request**: User chats with the Main AUR: *"What's the weather in London?"*
 2.  **HU Emission**: The Main AUR processes this and emits a Holographic Update (HU) to the Flux.

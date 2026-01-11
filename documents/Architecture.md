@@ -58,29 +58,10 @@ The `auraRegistry` is a singleton service that acts as the gatekeeper for the sy
 ## Data Flow: Flux & HUs
 
 The communication system consists of two parts:
--   **Flux**: The active *"Ether"* or bus that permeates the Space.
+-   **Flux**: The active *Space* or bus that permeates the environment.
 -   **HU (Holographic Update)**: The structured *message* payload traveling through the Flux.
 
-### Scenario: Intelligent Orchestration
-When a user asks about the weather, the system orchestrates a response using Flux.
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Main as Main (Chat) AUR
-    participant Flux as Flux Bus
-    participant Mgr as AURManager
-    participant Space as The Space
-    participant Weather as Weather AUR
-
-    User->>Main: "What's the weather in London?"
-    Main->>Flux: Emits HU { type: "INTENT_WEATHER", data: "London" }
-    Flux->>Mgr: Broadcasts HU
-    Note over Mgr: Analyzes HU &<br/>Checks Registry
-    Mgr->>Space: Spawns 'weather-aur'
-    Space->>Weather: Mounts with props { city: "London" }
-    Weather-->>User: Displays Forecast
-```
+For a detailed example of how these work together (including diagrams), see the [Developer Guide: Intelligent Orchestration](Developer-Guide.md#scenario-intelligent-orchestration).
 
 1.  **Emission**: An AUR calls `broadcastSignal('HU', { type: 'INTENT', payload: ... })`.
 2.  **Propagation**: The `AURContext` receives this HU and "pulses" it through the Flux.
