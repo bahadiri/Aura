@@ -16,20 +16,20 @@ graph TD
     Manager[AURManager]
     Flux[Flux]
     
-    Manager <-->|Listens & Updates| Flux
+    Manager <==>|Listens & Updates Space| Flux
 
-    subgraph "The Space (UI Layer)"
+    subgraph "The Space"
         MainAUR
         AUR1[Brainstorm AUR]
         AUR2[Image AUR]
         AUR3[Custom AUR]
     end
 
-    MainAUR -->|"HU (Holographic Update)"| Flux
-    AUR1 -->|"HU (Holographic Update)"| Flux
-    Flux -.->|Resonance| AUR2
-    Flux -.->|Resonance| AUR3
-    Flux -.->|Resonance| MainAUR
+    MainAUR -->|"HU"| Flux
+    AUR1 -->|"HU"| Flux
+    Flux -.->|"HU"| AUR2
+    Flux -.->|"HU"| AUR3
+    Flux -.->|"HU"| MainAUR
 ```
 
 ## The New AUR Standard (`AURManifest`)
