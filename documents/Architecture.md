@@ -13,12 +13,13 @@ This document details the technical architecture of the Aura system, focusing on
 graph TD
     User[User / Agent] -->|Interacts| MainAUR[Main / Chat AUR]
     
-    Prism[Prism (Core System)]
+    Prism["Prism (Core System)"]
     Flux[Flux]
     
-    Prism <==>|Listens & Updates Space| Flux
+    Prism <==>|Refracts| Flux
+    Prism ==>|Updates| Space
 
-    subgraph "The Space"
+    subgraph Space ["The Space"]
         MainAUR
         AUR1[Brainstorm AUR]
         AUR2[Image AUR]
