@@ -5,13 +5,13 @@
 
 # 🏗️ Aura Architecture
 
-This document details the technical architecture of the Aura system, focusing on the interactions between the Registry, the Context (**"The Space"** - *The Visual UI Layer*), and the individual AURs.
+This document details the technical architecture of the Aura system, focusing on the interactions between the Registry, the Context (**"The Space"**), and the individual AIRs.
 
 ## System Diagram
 
 ```mermaid
 graph TD
-    User((User)) -->|Interacts| AUR1[Brainstorm AUR]
+    User((User)) -->|Interacts| AUR1[Brainstorm AIR]
     
     Caster[Caster]
     Flux[Flux]
@@ -21,8 +21,8 @@ graph TD
 
     subgraph Space ["The Space"]
         AUR1
-        AUR2[Image AUR]
-        AUR3[Custom AUR]
+        AUR2[Image AIR]
+        AUR3[Custom AIR]
     end
 
     AUR1 -->|"HU"| Flux
@@ -38,7 +38,7 @@ graph TD
 1.  **Control the UI**: It holds the ultimate authority over "The Space." It decides what is rendered, where it is placed, and when it is removed.
 2.  **Make Smart Decisions**: It listens to the **Flux** and "Casts" raw information into actions. If an HU contains a weather intent, the Caster decides to spawn a Weather AUR. It dynamically starts, ends, or modifies UI elements based on the data stream.
 
-## The New AUR Standard (`AURManifest`)
+## The New AIR Standard (`AURManifest`)
 
 Every valid component in the Aura system must adhere to the `AURManifest` interface. This ensures that the system can validate, manage, and "understand" the capabilities of every window.
 
@@ -64,7 +64,7 @@ export interface AURManifest {
 The `auraRegistry` is a singleton service that acts as the gatekeeper for the system.
 
 -   **Validation**: When `registry.register(manifest)` is called, it strictly validates that all required fields (id, component, meta) are present.
--   **Discovery**: It provides methods like `getAll()` and `getComponentMap()` for the `AURManager` to dynamically instantiate components.
+-   **Discovery**: It provides methods like `getAll()` and `getComponentMap()` for the `Caster` to dynamically instantiate components.
 
 ## Data Flow: Flux & HUs
 
@@ -74,14 +74,14 @@ The communication system consists of two parts:
 
 For a detailed example of how these work together (including diagrams), see the [Developer Guide: Intelligent Orchestration](Developer-Guide.md#scenario-intelligent-orchestration).
 
-1.  **Emission**: An AUR calls `broadcastSignal('HU', { type: 'INTENT', payload: ... })`.
+1.  **Emission**: An AIR calls `broadcastSignal('HU', { type: 'INTENT', payload: ... })`.
 2.  **Propagation**: The `AURContext` receives this HU and "pulses" it through the Flux.
-3.  **Reception**: The `AURManager` (or other AURs) intercept the HU and react (e.g., by spawning new windows).
+3.  **Reception**: The `Caster` (or other AIRs) intercept the HU and react (e.g., by spawning new windows).
     ```
 
 ## State Management
 
 Window management (position, z-index, minimization) is handled by the `AURContext`. It maintains a list of `AURState` objects, completely separate from the `AURManifest`.
 
--   **Manifest**: *Static* definition (What the AUR is).
--   **State**: *Dynamic* instance (Where the AUR is right now).
+-   **Manifest**: *Static* definition (What the AIR is).
+-   **State**: *Dynamic* instance (Where the AIR is right now).

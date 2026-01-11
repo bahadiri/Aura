@@ -10,4 +10,4 @@
 
 - **Guides**
   - [Developer Guide](Developer-Guide)
-  - [Creating AURs](Developer-Guide#step-1-create-the-component)
+  - [Creating AIRs](Developer-Guide#step-1-create-the-component)
