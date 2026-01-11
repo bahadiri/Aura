@@ -1,4 +1,8 @@
 
+
+> **💿 Aura Documentation**
+> [🏠 Home](README.md) &nbsp; • &nbsp; [🏗️ Architecture](documents/Architecture.md) &nbsp; • &nbsp; [👩‍💻 Developer Guide](documents/Developer-Guide.md)
+
 # 🌌 Aura System Overview
 
 Aura is a **spatial, agentic window manager** designed for the AI age. It rethinks the traditional desktop interface by replacing static windows with "Adaptive User Representatives" (AURs) that live in a shared, reactive environment called **The Space**.

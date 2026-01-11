@@ -1,4 +1,8 @@
 
+
+> **💿 Aura Documentation**
+> [🏠 Home](../README.md) &nbsp; • &nbsp; [🏗️ Architecture](Architecture.md) &nbsp; • &nbsp; [👩‍💻 Developer Guide](Developer-Guide.md)
+
 # 🏗️ Aura Architecture
 
 This document details the technical architecture of the Aura system, focusing on the interactions between the Registry, the Context ("The Space"), and the individual AURs.

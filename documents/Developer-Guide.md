@@ -1,4 +1,8 @@
 
+
+> **💿 Aura Documentation**
+> [🏠 Home](../README.md) &nbsp; • &nbsp; [🏗️ Architecture](Architecture.md) &nbsp; • &nbsp; [👩‍💻 Developer Guide](Developer-Guide.md)
+
 # 👩‍💻 Developer Guide: Creating AURs
 
 This guide walks you through creating a new Adaptive User Representative (AUR) and registering it with the Aura system.
