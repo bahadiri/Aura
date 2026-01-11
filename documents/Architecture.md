@@ -12,21 +12,24 @@ This document details the technical architecture of the Aura system, focusing on
 ```mermaid
 graph TD
     User[User / Agent] -->|Interacts| MainAUR[Main / Chat AUR]
-    MainAUR -->|"HU (Holographic Update)"| Flux[Flux Bus]
     
-    Flux -->|Listens| Manager[AURManager]
-    Manager -->|Updates| Space["The Space (UI Layer)"]
+    Manager[AURManager]
+    Flux[Flux]
     
+    Manager <-->|Listens & Updates| Flux
+
     subgraph "The Space (UI Layer)"
-        Space -->|Renders| AUR1[Brainstorm AUR]
-        Space -->|Renders| AUR2[Image AUR]
-        Space -->|Renders| AUR3[Custom AUR]
+        MainAUR
+        AUR1[Brainstorm AUR]
+        AUR2[Image AUR]
+        AUR3[Custom AUR]
     end
 
+    MainAUR -->|"HU (Holographic Update)"| Flux
     AUR1 -->|"HU (Holographic Update)"| Flux
-    AUR2 -->|"HU (Holographic Update)"| Flux
+    Flux -.->|Resonance| AUR2
     Flux -.->|Resonance| AUR3
-    Flux -.->|Resonance| AUR1
+    Flux -.->|Resonance| MainAUR
 ```
 
 ## The New AUR Standard (`AURManifest`)

@@ -29,7 +29,7 @@ In this scenario, we want to show how a user's request propagates through Flux u
 sequenceDiagram
     participant User
     participant Main as Main (Chat) AUR
-    participant Flux as Flux Bus
+    participant Flux as Flux
     participant Mgr as AURManager
     participant Space as The Space
     participant Weather as Weather AUR
