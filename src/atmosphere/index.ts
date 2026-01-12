@@ -1,6 +1,6 @@
 import { AIRManifest } from './types.js';
 
-class AtmosphereRegistry {
+class Atmosphere {
     private registry: Map<string, AIRManifest> = new Map();
 
     /**
@@ -40,4 +40,8 @@ class AtmosphereRegistry {
     }
 }
 
-export const atmosphere = new AtmosphereRegistry();
+export const atmosphere = new Atmosphere();
+
+import { manifests } from './manifests';
+manifests.forEach(m => atmosphere.register(m));
+
