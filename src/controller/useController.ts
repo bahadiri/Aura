@@ -3,6 +3,7 @@ import { atmosphere } from '../atmosphere/index.js';
 import { flux } from '../flux/index.js';
 import { FluxMessage } from '../flux/types.js';
 import { WindowState } from './types.js';
+import { findOptimalPosition } from './windowLayout.js';
 
 export function useController() {
     const [windows, setWindows] = useState<WindowState[]>([]);
@@ -17,17 +18,22 @@ export function useController() {
             return;
         }
 
+        const width = manifest.meta.width || 400;
+        const height = manifest.meta.height || 300;
+
         // Calculate Position
-        let position = { x: 100 + (windows.length * 20), y: 100 + (windows.length * 20) };
+        let position = { x: 100, y: 100 };
+
         if (manifest.meta.startPosition === 'center') {
-            const width = manifest.meta.width || 400;
-            const height = manifest.meta.height || 300;
             position = {
                 x: (window.innerWidth / 2) - (width / 2),
                 y: (window.innerHeight / 2) - (height / 2)
             };
         } else if (typeof manifest.meta.startPosition === 'object' && 'x' in manifest.meta.startPosition) {
-            position = manifest.meta.startPosition;
+            position = manifest.meta.startPosition as { x: number; y: number };
+        } else {
+            // Smart Positioning Logic
+            position = findOptimalPosition(windows, { width, height }, { width: window.innerWidth, height: window.innerHeight });
         }
 
         const newWindow: WindowState = {
@@ -36,16 +42,30 @@ export function useController() {
             props,
             zIndex: topZ + 1,
             position,
-            size: { width: manifest.meta.width || 400, height: manifest.meta.height || 300 },
+            size: { width, height },
             isMinimized: false
         };
 
         setWindows(prev => [...prev, newWindow]);
         setTopZ(prev => prev + 1);
-        console.debug(`[Controller] Spawned: ${newWindow.id}`);
+        console.debug(`[Controller] Spawned: ${newWindow.id} at`, position);
     }, [topZ, windows]);
 
-    // ... Flux logic ...
+    // Flux logic
+    useEffect(() => {
+        const unsubscribe = flux.subscribe((msg: FluxMessage) => {
+            if (msg.to === 'controller') {
+                switch (msg.type) {
+                    case 'SPAWN_AIR':
+                        spawnWindow(msg.payload.id, msg.payload.props);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        });
+        return unsubscribe;
+    }, [spawnWindow]);
 
     // Window Actions
     const closeWindow = (id: string) => {
@@ -72,6 +92,33 @@ export function useController() {
         setTopZ(prev => prev + 1);
     };
 
+    const reflect = useCallback(async (message: string) => {
+        const available_airs = atmosphere.getAll().map(m => ({
+            id: m.id,
+            title: m.meta.title,
+            description: m.meta.description
+        }));
+
+        try {
+            const res = await fetch('http://localhost:8000/api/chat/reflect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, available_airs })
+            });
+            const actions = await res.json();
+
+            if (Array.isArray(actions)) {
+                actions.forEach((action: any) => {
+                    spawnWindow(action.id, action.props);
+                });
+                return actions;
+            }
+        } catch (err) {
+            console.error("[Controller] Reflection failed:", err);
+        }
+        return [];
+    }, [spawnWindow]);
+
     return {
         windows,
         spawnWindow,
@@ -79,6 +126,7 @@ export function useController() {
         minimizeWindow,
         focusWindow,
         language,
-        setLanguage
+        setLanguage,
+        reflect
     };
 }

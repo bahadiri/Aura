@@ -4,7 +4,7 @@ import { atmosphere } from '../atmosphere';
 import { Rnd } from 'react-rnd';
 
 export const Space: React.FC = () => {
-    const { windows, spawnWindow, closeWindow, minimizeWindow, focusWindow, language, setLanguage } = useController();
+    const { windows, spawnWindow, closeWindow, minimizeWindow, focusWindow, language, setLanguage, reflect } = useController();
 
     // Startup: Spawn Brainstorm by default
     const initialized = React.useRef(false);
@@ -85,15 +85,16 @@ export const Space: React.FC = () => {
                                         style={{
                                             width: 24, height: 24, borderRadius: '50%', border: 'none',
                                             background: 'rgba(0,0,0,0.05)', color: '#666',
-                                            cursor: 'pointer', fontSize: 14, display: 'flex',
+                                            cursor: 'pointer', display: 'flex',
                                             alignItems: 'center', justifyContent: 'center',
-                                            transition: 'background 0.2s',
-                                            paddingBottom: 4 // Visual alignment for underscore
+                                            transition: 'background 0.2s'
                                         }}
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.1)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
                                     >
-                                        _
+                                        <svg width="10" height="2" viewBox="0 0 10 2" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect width="10" height="2" rx="1" fill="currentColor" />
+                                        </svg>
                                     </button>
 
                                     {/* Close Button - Hidden for Brainstorm */}
@@ -103,14 +104,16 @@ export const Space: React.FC = () => {
                                             style={{
                                                 width: 24, height: 24, borderRadius: '50%', border: 'none',
                                                 background: 'rgba(0,0,0,0.05)', color: '#666',
-                                                cursor: 'pointer', fontSize: 14, display: 'flex',
+                                                cursor: 'pointer', display: 'flex',
                                                 alignItems: 'center', justifyContent: 'center',
-                                                transition: 'background 0.2s'
+                                                transition: 'all 0.2s'
                                             }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = '#ff5f56'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#ff5f56'; e.currentTarget.style.color = 'white'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = '#666'; }}
                                         >
-                                            ✕
+                                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M1 1L9 9M1 9L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                            </svg>
                                         </button>
                                     )}
                                 </div>
@@ -118,7 +121,7 @@ export const Space: React.FC = () => {
 
                             {/* Content */}
                             <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', color: '#1d1d1f' }}>
-                                <Component {...win.props} language={language} />
+                                <Component {...win.props} windows={windows} reflect={reflect} language={language} />
                             </div>
                         </Rnd>
                     );

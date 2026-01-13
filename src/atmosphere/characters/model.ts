@@ -1,20 +1,55 @@
+import { useState, useEffect } from 'react';
+
 export interface Character {
-    id: string;
+    id: string | number;
     name: string;
     role: string;
     imageUrl?: string;
     description?: string;
+    traits?: string[];
 }
 
 export interface UseCharactersProps {
     characters?: Character[];
+    query?: string;
+    title?: string;
     onSelect?: (char: Character) => void;
 }
 
 export const useCharacters = ({
-    characters = [],
+    characters: initialCharacters = [],
+    query,
+    title,
     onSelect
 }: UseCharactersProps) => {
+    const [characters, setCharacters] = useState<Character[]>(initialCharacters);
+    const [isLoading, setIsLoading] = useState(!initialCharacters.length && !!query);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (!initialCharacters.length && query) {
+            setIsLoading(true);
+            fetch(`http://localhost:8000/api/search/characters?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.characters && data.characters.length > 0) {
+                        setCharacters(data.characters);
+                    } else if (data.error) {
+                        setError(data.error);
+                    } else {
+                        setError('No characters found');
+                    }
+                })
+                .catch(err => {
+                    console.error("Character fetch failed:", err);
+                    setError('Failed to load characters');
+                })
+                .finally(() => setIsLoading(false));
+        } else if (initialCharacters.length > 0) {
+            setCharacters(initialCharacters);
+            setIsLoading(false);
+        }
+    }, [initialCharacters, query]);
 
     const handleSelect = (char: Character) => {
         if (onSelect) {
@@ -24,6 +59,9 @@ export const useCharacters = ({
 
     return {
         characters,
-        handleSelect
+        isLoading,
+        error,
+        handleSelect,
+        displayTitle: title || query || 'Characters'
     };
 };

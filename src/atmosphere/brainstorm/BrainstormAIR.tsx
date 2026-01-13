@@ -4,17 +4,25 @@ import { View } from './view';
 
 export interface BrainstormAIRProps {
     initialMessages?: Message[];
+    onReflect?: (message: string) => Promise<any[]>;
+    windows?: any[];
 }
 
-export const BrainstormAIR: React.FC<BrainstormAIRProps> = ({ initialMessages = [] }) => {
+export const BrainstormAIR: React.FC<BrainstormAIRProps> = ({
+    initialMessages = [],
+    onReflect,
+    windows = []
+}) => {
     const {
         messages,
         manual,
         setManual,
         isTyping,
         voice,
-        handleSend
-    } = useBrainstorm({ initialMessages });
+        handleSend,
+        isSpeakingEnabled,
+        setIsSpeakingEnabled
+    } = useBrainstorm({ initialMessages, onReflect, windows });
 
     return (
         <View
@@ -24,6 +32,8 @@ export const BrainstormAIR: React.FC<BrainstormAIRProps> = ({ initialMessages = 
             isTyping={isTyping}
             voice={voice}
             onSend={handleSend}
+            isSpeakingEnabled={isSpeakingEnabled}
+            setIsSpeakingEnabled={setIsSpeakingEnabled}
         />
     );
 };

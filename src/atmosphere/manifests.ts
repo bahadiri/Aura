@@ -7,7 +7,7 @@ import { TasksManifest } from './tasks/manifest';
 import { QueryManifest } from './query/manifest';
 import { InfoGridManifest } from './info-grid/manifest';
 import { PromptManifest } from './prompt/manifest';
-import { SeriesEpisodesManifest } from './series-episodes/manifest';
+import { PlotManifest } from './plot/manifest';
 import { CharactersManifest } from './characters/manifest';
 
 export const manifests = [
@@ -20,7 +20,7 @@ export const manifests = [
     QueryManifest,
     InfoGridManifest,
     PromptManifest,
-    SeriesEpisodesManifest,
+    PlotManifest,
     CharactersManifest
 ];
 
