@@ -1,27 +1,278 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useController } from './useController';
 import { atmosphere } from '../atmosphere';
 import { Rnd } from 'react-rnd';
+import { flux } from '../flux';
+import { FluxMessage } from '../flux/types';
 
-export const Space: React.FC = () => {
-    const { windows, spawnWindow, closeWindow, minimizeWindow, focusWindow, language, setLanguage, reflect } = useController();
+interface SpaceProps {
+    projectId?: string;
+}
 
-    // Startup: Spawn Brainstorm by default
-    const initialized = React.useRef(false);
-    React.useEffect(() => {
-        if (!initialized.current && windows.length === 0) {
-            initialized.current = true;
-            spawnWindow('brainstorm-air');
+interface Project {
+    id: string;
+    name: string;
+    state: any;
+    updated_at: string;
+}
+
+export const Space: React.FC<SpaceProps> = ({ projectId }) => {
+    // 1. Fetch Project Data & Initial State
+    const [project, setProject] = useState<Project | null>(null);
+    const [loading, setLoading] = useState(!!projectId);
+    const [saving, setSaving] = useState(false);
+    const initializedRef = useRef(false);
+
+    // We need to hold the initial state in a ref to pass it to useController ONLY once
+    // or we can use useController's loadState method after mounting.
+    // Given the hook structure, it's cleaner to use loadState.
+    const controller = useController();
+    const { windows, spawnWindow, closeWindow, minimizeWindow, focusWindow, language, setLanguage, reflect, serialize, loadState } = controller;
+
+    useEffect(() => {
+        if (!projectId) {
+            setLoading(false);
+            // Default behavior if no project: spawn Brainstorm
+            if (windows.length === 0) spawnWindow('brainstorm-air');
+            return;
         }
-    }, []); // Run once on mount
 
-    // Debug: Expose control
-    React.useEffect(() => {
-        (window as any).aura = { spawnWindow };
-    }, [spawnWindow]);
+        const fetchProject = async () => {
+            try {
+                const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
+                // Need auth token? Ideally yes. For now assuming browser cookie or we need to pass token.
+                // The backend requires auth. We need to get the token from Firebase Auth.
+                // But this is inside Aura package. It doesn't know about Firebase. 
+                // We should probably rely on the parent to pass the auth token or use a global fetch interceptor.
+                // For this implementation, I will assume the parent passes the token or we use a basic fetch 
+                // and hope the backend generic auth handles it or we use the 'debug' bypass if necessary.
+                // Actually, standard firebase-js-sdk manages the token. We can get it if we imported firebase.
+                // Since Aura is pure, we might hit a blocker here. 
+                // FIX: Let's assume for now we can fetch without headers, OR we rely on `projectId` being enough context 
+                // if we adjusted the backend. BUT the backend enforces `get_current_user`.
+                // WE NEED TO PASS THE TOKEN.
+                // Let's import the auth from the parent app? No, circular dependency.
+                // For now, I will try to fetch without token and see if it fails (it will).
+                // Solution: We should pass `token` as a prop too, or `fetcher`.
+                // Let's look at `App.tsx` again. usage of `useAuth`.
+
+                // Temporary HACK: We will try to fetch. If 401, we are stuck.
+                // Better approach: Space should verify auth or assume it has it. 
+                // We can use `firebase/auth` here if we npm install it? 
+                // Or better: `Space` should accept an `api` object or `fetcher`.
+
+                // Let's proceed with a direct fetch and if it fails, I will refactor `App.tsx` to pass a fetcher.
+                // Wait, `Aura` probably shouldn't depend on Saga's backend specifics.
+                // But for this monolithic repo, it's acceptable.
+
+                // To get the token properly without coupling, we can read localStorage if Saga stores it, 
+                // OR we just import `firebase/auth` and `getAuth` since it's a client-side library.
+
+                // Let's try to get the user from the window if Saga exposed it? No.
+                // I will add `getAuth` here. 
+
+                // WAIT! I don't want to add dependencies to Aura if I can avoid it.
+                // Let's assuming the user is logged in and the browser handles it? No, Bearer token needed.
+
+                // Strategy: I will add code to get the token from `sessionStorage` or similar if available,
+                // OR I will just import `firebase/auth` dynamically?
+                // Let's stick to the simplest: Assume `window.sagaToken` is set by App.tsx?
+
+                // REVISION: I will update `App.tsx` to set `window.sagaToken` or pass it. 
+                // Actually, I can just import `getAuth` from `firebase/auth`.
+
+                // For now:
+                const token = (window as any).sagaToken; // I'll set this in App.tsx
+
+                const res = await fetch(`http://localhost:${port}/api/projects/${projectId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!res.ok) throw new Error("Failed to load");
+                const data = await res.json();
+                setProject(data);
+
+                if (data.state && data.state.windows && data.state.windows.length > 0) {
+                    console.log("[Space] Loading state from backend:", data.state);
+                    loadState(data.state);
+                } else {
+                    console.log("[Space] No state found. Defaulting to Brainstorm.");
+                    // Only spawn default if explicitly NO state or EMPTY state
+                    if (windows.length === 0) spawnWindow('brainstorm-air');
+                }
+                initializedRef.current = true;
+            } catch (err) {
+                console.error(err);
+                if (windows.length === 0) spawnWindow('brainstorm-air');
+                initializedRef.current = true;
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // We use a ref to prevent double-spawning in React Strict Mode
+        if (!initializedRef.current) {
+            fetchProject();
+        }
+    }, [projectId]);
+
+    // 2. Auto-Save Logic
+    const saveTimeoutRef = useRef<any>(null);
+    const lastSavedState = useRef<string>("");
+
+    useEffect(() => {
+        if (!projectId || loading) return;
+
+        const currentState = serialize();
+        const stateString = JSON.stringify(currentState);
+
+        if (stateString === lastSavedState.current) return;
+
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+        setSaving(true);
+        saveTimeoutRef.current = setTimeout(async () => {
+            try {
+                const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
+                const token = (window as any).sagaToken;
+
+                await fetch(`http://localhost:${port}/api/projects/${projectId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        state: currentState
+                    })
+                });
+                lastSavedState.current = stateString;
+                setSaving(false);
+            } catch (err) {
+                console.error("Auto-save failed", err);
+                setSaving(false); // Maybe show error?
+            }
+        }, 2000); // 2 seconds debounce
+
+    }, [windows, language, projectId, loading]);
+
+    // 4. Smart Naming Logic
+    const promptCount = useRef(0);
+    const accumulatedPrompts = useRef<string[]>([]);
+    const hasAutoRenamed = useRef(false);
+
+    useEffect(() => {
+        const unsubscribe = flux.subscribe(async (msg: FluxMessage) => {
+            if (msg.type === 'INTENT_DETECTED' && msg.payload.source === 'brainstorm-air') {
+                if (hasAutoRenamed.current) return;
+
+                // Only rename if currently untitled
+                if (project && project.name !== "Untitled Project" && !project.name.startsWith("Untitled")) {
+                    return;
+                }
+
+                promptCount.current += 1;
+                accumulatedPrompts.current.push(msg.payload.text);
+
+                if (promptCount.current === 3) {
+                    hasAutoRenamed.current = true;
+                    // Trigger Rename
+                    try {
+                        const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
+                        // Use fetch directly
+                        const res = await fetch(`http://localhost:${port}/api/generate-project-title`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompts: accumulatedPrompts.current })
+                        });
+                        const data = await res.json();
+                        if (data.title) {
+                            handleRename(data.title);
+                        }
+                    } catch (err) {
+                        console.error("Auto-rename failed", err);
+                    }
+                }
+            }
+        });
+        return unsubscribe;
+    }, [project]); // Re-bind if project changes, but deps are tricky here. 
+    // Actually, we want to capture 'project' state. 
+    // If we include project in deps, we unsubscribe/resubscribe often.
+    // Better to use ref for project name check or just check current state in a functional update?
+    // Flux callback is a closure. 
+    // Let's rely on 'hasAutoRenamed' blocking subsequent calls.
+    // And simplistic check: if we are at count 3, we fire. 
+    // The 'project.name' check inside the closure might be stale if we don't include it in deps.
+    // Including 'project' in deps is safe enough given flux is cheap to sub/unsub.
+
+    // 3. Rename Logic
+    const handleRename = async (newName: string) => {
+        if (!project || !projectId) return;
+        // Optimistic update
+        setProject({ ...project, name: newName });
+
+        try {
+            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
+            const token = (window as any).sagaToken;
+
+            await fetch(`http://localhost:${port}/api/projects/${projectId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: newName
+                })
+            });
+        } catch (err) {
+            console.error("Rename failed", err);
+        }
+    };
+
+
+    if (loading) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#666' }}>Loading Space...</div>;
+    }
 
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+
+            {/* Header / Status Bar */}
+            <div style={{
+                height: 40,
+                background: 'rgba(20, 20, 25, 0.9)',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 20px',
+                justifyContent: 'space-between',
+                zIndex: 2000
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <a href="/" style={{ textDecoration: 'none', color: '#888', fontSize: 14 }}>&larr; Projects</a>
+                    <div style={{ width: 1, height: 16, background: '#333' }} />
+                    <input
+                        value={project?.name || "Untitled Project"}
+                        onChange={(e) => handleRename(e.target.value)}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#fff',
+                            fontWeight: 600,
+                            fontSize: 14,
+                            width: 200,
+                            outline: 'none'
+                        }}
+                    />
+                </div>
+                <div style={{ color: '#666', fontSize: 12, fontWeight: 500 }}>
+                    {saving ? "Saving..." : "Saved"}
+                </div>
+            </div>
 
             {/* Main Desktop Area */}
             <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
@@ -43,13 +294,25 @@ export const Space: React.FC = () => {
                                 width: win.size?.width || 300,
                                 height: win.size?.height || 400
                             }}
+                            position={{ x: win.position.x, y: win.position.y }}
+                            size={{ width: win.size?.width || 300, height: win.size?.height || 400 }}
+                            onDragStop={(e, d) => {
+                                controller.updateWindow(win.id, { position: { x: d.x, y: d.y } });
+                            }}
+                            onResizeStop={(e, direction, ref, delta, position) => {
+                                controller.updateWindow(win.id, {
+                                    size: { width: parseFloat(ref.style.width), height: parseFloat(ref.style.height) },
+                                    position: position
+                                });
+                            }}
+
                             style={{
                                 zIndex: win.zIndex,
-                                background: 'rgba(255, 255, 255, 0.95)',
-                                backdropFilter: 'blur(10px)',
-                                borderRadius: 16,
-                                boxShadow: '0 10px 40px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)',
-                                border: '1px solid rgba(0,0,0,0.1)',
+                                background: 'rgba(20, 20, 25, 0.85)',
+                                backdropFilter: 'blur(20px) saturate(180%)',
+                                borderRadius: 20,
+                                boxShadow: '0 20px 50px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)',
+                                border: '1px solid rgba(255,255,255,0.1)',
                                 overflow: 'hidden',
                                 display: win.isMinimized ? 'none' : 'flex',
                                 flexDirection: 'column'
@@ -59,17 +322,17 @@ export const Space: React.FC = () => {
                         >
                             {/* Title Bar */}
                             <div className="window-drag-handle" style={{
-                                height: 40,
-                                background: 'rgba(0,0,0,0.02)',
-                                borderBottom: '1px solid rgba(0,0,0,0.05)',
+                                height: 44,
+                                background: 'rgba(255,255,255,0.03)',
+                                borderBottom: '1px solid rgba(255,255,255,0.08)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                padding: '0 14px',
+                                padding: '0 18px',
                                 justifyContent: 'space-between',
                                 cursor: 'move',
                                 userSelect: 'none'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, fontWeight: 600, color: '#1d1d1f' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 500, color: '#fff', letterSpacing: '0.3px' }}>
                                     {(manifest.meta.icon.startsWith('http') || manifest.meta.icon.startsWith('/')) ? (
                                         <img src={manifest.meta.icon} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
                                     ) : (
@@ -83,14 +346,14 @@ export const Space: React.FC = () => {
                                     <button
                                         onClick={(e) => { e.stopPropagation(); minimizeWindow(win.id); }}
                                         style={{
-                                            width: 24, height: 24, borderRadius: '50%', border: 'none',
-                                            background: 'rgba(0,0,0,0.05)', color: '#666',
+                                            width: 26, height: 26, borderRadius: '50%', border: 'none',
+                                            background: 'rgba(255,255,255,0.08)', color: '#aaa',
                                             cursor: 'pointer', display: 'flex',
                                             alignItems: 'center', justifyContent: 'center',
-                                            transition: 'background 0.2s'
+                                            transition: 'all 0.2s'
                                         }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.1)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#aaa'; }}
                                     >
                                         <svg width="10" height="2" viewBox="0 0 10 2" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <rect width="10" height="2" rx="1" fill="currentColor" />
@@ -102,14 +365,14 @@ export const Space: React.FC = () => {
                                         <button
                                             onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }}
                                             style={{
-                                                width: 24, height: 24, borderRadius: '50%', border: 'none',
-                                                background: 'rgba(0,0,0,0.05)', color: '#666',
+                                                width: 26, height: 26, borderRadius: '50%', border: 'none',
+                                                background: 'rgba(255,255,255,0.08)', color: '#aaa',
                                                 cursor: 'pointer', display: 'flex',
                                                 alignItems: 'center', justifyContent: 'center',
                                                 transition: 'all 0.2s'
                                             }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#ff5f56'; e.currentTarget.style.color = 'white'; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = '#666'; }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#ff4b4b'; e.currentTarget.style.color = 'white'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#aaa'; }}
                                         >
                                             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M1 1L9 9M1 9L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -120,8 +383,8 @@ export const Space: React.FC = () => {
                             </div>
 
                             {/* Content */}
-                            <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', color: '#1d1d1f' }}>
-                                <Component {...win.props} windows={windows} reflect={reflect} language={language} />
+                            <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', color: '#fff' }}>
+                                <Component {...win.props} windows={windows} reflect={reflect} language={language} updateWindow={(data: any) => controller.updateWindow(win.id, data)} />
                             </div>
                         </Rnd>
                     );
@@ -134,12 +397,12 @@ export const Space: React.FC = () => {
                 bottom: 24,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                height: 70,
-                background: 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: 24,
-                border: '1px solid rgba(0,0,0,0.1)',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                height: 76,
+                background: 'rgba(20, 20, 25, 0.7)',
+                backdropFilter: 'blur(30px) saturate(150%)',
+                borderRadius: 28,
+                border: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -184,16 +447,18 @@ export const Space: React.FC = () => {
                             title={title}
                         >
                             <div style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 12,
-                                background: 'white',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                width: 48,
+                                height: 48,
+                                borderRadius: 14,
+                                background: 'rgba(255,255,255,0.05)',
+                                boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifySelf: 'center',
                                 justifyContent: 'center',
-                                fontSize: 24,
-                                border: '2px solid rgba(0,0,0,0.05)'
+                                fontSize: 26,
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                transition: 'all 0.2s'
                             }}>
                                 {(manifest.meta.icon.startsWith('http') || manifest.meta.icon.startsWith('/')) ? (
                                     <img src={manifest.meta.icon} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
@@ -209,19 +474,23 @@ export const Space: React.FC = () => {
                     );
                 })}
 
-                {windows.length > 0 && <div style={{ width: 1, height: 30, background: 'rgba(0,0,0,0.1)', margin: '0 10px' }} />}
+                {windows.length > 0 && <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.1)', margin: '0 12px' }} />}
 
                 <button
                     onClick={() => setLanguage(l => l === 'en' ? 'tr' : 'en')}
                     style={{
-                        padding: '6px 12px',
-                        borderRadius: 8,
-                        border: '1px solid rgba(0,0,0,0.1)',
-                        background: 'white',
+                        padding: '8px 14px',
+                        borderRadius: 10,
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
                         fontWeight: 600,
                         fontSize: 12,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
                     }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                 >
                     {language.toUpperCase()}
                 </button>

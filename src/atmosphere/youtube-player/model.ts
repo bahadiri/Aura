@@ -4,9 +4,10 @@ export interface YoutubePlayerAIRProps {
     videoId?: string;
     query?: string;
     autoplay?: boolean;
+    updateWindow?: (data: any) => void;
 }
 
-export const useYoutubePlayer = ({ videoId: initialVideoId, query, autoplay = false }: YoutubePlayerAIRProps) => {
+export const useYoutubePlayer = ({ videoId: initialVideoId, query, autoplay = false, updateWindow }: YoutubePlayerAIRProps) => {
     const [videoId, setVideoId] = useState(initialVideoId);
     const [isLoading, setIsLoading] = useState(!initialVideoId && !!query);
     const [error, setError] = useState('');
@@ -22,11 +23,15 @@ export const useYoutubePlayer = ({ videoId: initialVideoId, query, autoplay = fa
         if (query) {
             setIsLoading(true);
             setError('');
-            fetch(`http://localhost:8000/api/search/video?q=${encodeURIComponent(query)}`)
+            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
+            fetch(`http://localhost:${port}/api/search/video?q=${encodeURIComponent(query)}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.videoId) {
                         setVideoId(data.videoId);
+                        if (updateWindow) {
+                            updateWindow({ props: { videoId: data.videoId, query } });
+                        }
                     } else {
                         setError(data.error || 'Trailer not found');
                     }

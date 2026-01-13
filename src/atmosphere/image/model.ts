@@ -7,6 +7,7 @@ export interface ImageAIRProps {
     title?: string;
     language?: string;
     prompt?: string;
+    updateWindow?: (data: any) => void;
 }
 
 export const useImageAIR = (props: ImageAIRProps) => {
@@ -17,22 +18,29 @@ export const useImageAIR = (props: ImageAIRProps) => {
     useEffect(() => {
         if (!props.src && props.query) {
             setLoading(true);
+            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
             // Search for image
-            fetch(`http://localhost:8000/api/search/image?q=${encodeURIComponent(props.query)}`)
+            fetch(`http://localhost:${port}/api/search/image?q=${encodeURIComponent(props.query)}`)
                 .then(res => {
                     console.log("Image Search Response Status:", res.status);
                     return res.json();
                 })
                 .then(data => {
                     console.log("Image Search Data:", data);
+                    let foundSrc = '';
                     if (data.poster_path) {
-                        setSrc(`https://image.tmdb.org/t/p/w500${data.poster_path}`);
+                        foundSrc = `https://image.tmdb.org/t/p/w500${data.poster_path}`;
                     } else if (data.url) {
-                        setSrc(data.url);
+                        foundSrc = data.url;
                     } else {
                         console.warn("No poster_path or url in data");
                         setError('Image not found');
-                        setSrc('https://via.placeholder.com/400x600?text=No+Image+Found');
+                        foundSrc = 'https://via.placeholder.com/400x600?text=No+Image+Found';
+                    }
+                    setSrc(foundSrc);
+                    // Persist the found source!
+                    if (props.updateWindow) {
+                        props.updateWindow({ props: { ...props, src: foundSrc } });
                     }
                 })
                 .catch(err => {

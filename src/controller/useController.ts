@@ -5,10 +5,19 @@ import { FluxMessage } from '../flux/types.js';
 import { WindowState } from './types.js';
 import { findOptimalPosition } from './windowLayout.js';
 
-export function useController() {
+export function useController(initialState?: any) {
     const [windows, setWindows] = useState<WindowState[]>([]);
     const [topZ, setTopZ] = useState(1);
     const [language, setLanguage] = useState<string>('en'); // Default language
+
+    // Hydrate state on mount if provided
+    useEffect(() => {
+        if (initialState && initialState.windows) {
+            setWindows(initialState.windows);
+            setTopZ(initialState.topZ || 10);
+            if (initialState.language) setLanguage(initialState.language);
+        }
+    }, []);
 
 
     const spawnWindow = useCallback((manifestId: string, props: any = {}) => {
@@ -81,15 +90,45 @@ export function useController() {
     const focusWindow = (id: string) => {
         setWindows(prev => prev.map(w => {
             if (w.id === id) {
-                // If it was minimized, restore it.
-                // If it was already active and visible, maybe minimize it? 
-                // For now, consistent "Launch/Focus" behavior = Bring to Front & Restore.
-                // We'll handle "Minimize on click if active" in the View layer or here if we want toggle behavior.
                 return { ...w, zIndex: topZ + 1, isMinimized: false };
             }
             return w;
         }));
         setTopZ(prev => prev + 1);
+    };
+
+    const updateWindow = (id: string, data: any) => {
+        setWindows(prev => prev.map(w => {
+            if (w.id === id) {
+                // Support updating top-level properties like position/size
+                // AND deep merging props if 'props' key is present.
+                const { props, ...topLevel } = data;
+
+                let newProps = w.props;
+                if (props) {
+                    newProps = { ...newProps, ...props };
+                }
+
+                return { ...w, ...topLevel, props: newProps };
+            }
+            return w;
+        }));
+    };
+
+    const serialize = () => {
+        return {
+            windows,
+            topZ,
+            language
+        };
+    };
+
+    const loadState = (state: any) => {
+        if (state && state.windows) {
+            setWindows(state.windows);
+            setTopZ(state.topZ || 10);
+            if (state.language) setLanguage(state.language);
+        }
     };
 
     const reflect = useCallback(async (message: string) => {
@@ -100,7 +139,8 @@ export function useController() {
         }));
 
         try {
-            const res = await fetch('http://localhost:8000/api/chat/reflect', {
+            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8000';
+            const res = await fetch(`http://localhost:${port}/api/chat/reflect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message, available_airs })
@@ -127,6 +167,9 @@ export function useController() {
         focusWindow,
         language,
         setLanguage,
-        reflect
+        reflect,
+        updateWindow,
+        serialize,
+        loadState
     };
 }

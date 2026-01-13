@@ -25,8 +25,9 @@ export const usePlotAIR = ({
     initialEpisodes = [],
     onFetchSummary,
     language,
-    prompt
-}: UsePlotAIRProps & { query?: string }) => {
+    prompt,
+    updateWindow
+}: UsePlotAIRProps & { query?: string; updateWindow?: (data: any) => void }) => {
     const [episodes, setEpisodes] = useState<Episode[]>(initialEpisodes);
     const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
     const [fetchedPlot, setFetchedPlot] = useState<string | undefined>(moviePlot);
@@ -38,16 +39,23 @@ export const usePlotAIR = ({
     useEffect(() => {
         if (mode === 'movie' && !moviePlot && query) {
             setIsSearching(true);
-            fetch(`http://localhost:8000/api/search/image?q=${encodeURIComponent(query)}`)
+            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
+            fetch(`http://localhost:${port}/api/search/image?q=${encodeURIComponent(query)}`)
                 .then(res => res.json())
                 .then(data => {
+                    let newPlot = "";
                     if (data.overview) {
-                        setFetchedPlot(data.overview);
+                        newPlot = data.overview;
                     } else if (data.url) {
                         // Fallback if we only got image? 
-                        setFetchedPlot("Found movie: " + data.title + ". (Plot unavailable in current API response)");
+                        newPlot = "Found movie: " + data.title + ". (Plot unavailable in current API response)";
                     } else {
-                        setFetchedPlot("Could not find plot for: " + query);
+                        newPlot = "Could not find plot for: " + query;
+                    }
+                    setFetchedPlot(newPlot);
+
+                    if (updateWindow && newPlot) {
+                        updateWindow({ props: { moviePlot: newPlot } });
                     }
                 })
                 .catch(err => {
