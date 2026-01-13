@@ -32,57 +32,17 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
     useEffect(() => {
         if (!projectId) {
             setLoading(false);
-            // Default behavior if no project: spawn Brainstorm
-            if (windows.length === 0) spawnWindow('brainstorm-air');
+            if (!initializedRef.current && windows.length === 0) {
+                spawnWindow('brainstorm-air');
+                initializedRef.current = true;
+            }
             return;
         }
 
         const fetchProject = async () => {
             try {
                 const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-                // Need auth token? Ideally yes. For now assuming browser cookie or we need to pass token.
-                // The backend requires auth. We need to get the token from Firebase Auth.
-                // But this is inside Aura package. It doesn't know about Firebase. 
-                // We should probably rely on the parent to pass the auth token or use a global fetch interceptor.
-                // For this implementation, I will assume the parent passes the token or we use a basic fetch 
-                // and hope the backend generic auth handles it or we use the 'debug' bypass if necessary.
-                // Actually, standard firebase-js-sdk manages the token. We can get it if we imported firebase.
-                // Since Aura is pure, we might hit a blocker here. 
-                // FIX: Let's assume for now we can fetch without headers, OR we rely on `projectId` being enough context 
-                // if we adjusted the backend. BUT the backend enforces `get_current_user`.
-                // WE NEED TO PASS THE TOKEN.
-                // Let's import the auth from the parent app? No, circular dependency.
-                // For now, I will try to fetch without token and see if it fails (it will).
-                // Solution: We should pass `token` as a prop too, or `fetcher`.
-                // Let's look at `App.tsx` again. usage of `useAuth`.
-
-                // Temporary HACK: We will try to fetch. If 401, we are stuck.
-                // Better approach: Space should verify auth or assume it has it. 
-                // We can use `firebase/auth` here if we npm install it? 
-                // Or better: `Space` should accept an `api` object or `fetcher`.
-
-                // Let's proceed with a direct fetch and if it fails, I will refactor `App.tsx` to pass a fetcher.
-                // Wait, `Aura` probably shouldn't depend on Saga's backend specifics.
-                // But for this monolithic repo, it's acceptable.
-
-                // To get the token properly without coupling, we can read localStorage if Saga stores it, 
-                // OR we just import `firebase/auth` and `getAuth` since it's a client-side library.
-
-                // Let's try to get the user from the window if Saga exposed it? No.
-                // I will add `getAuth` here. 
-
-                // WAIT! I don't want to add dependencies to Aura if I can avoid it.
-                // Let's assuming the user is logged in and the browser handles it? No, Bearer token needed.
-
-                // Strategy: I will add code to get the token from `sessionStorage` or similar if available,
-                // OR I will just import `firebase/auth` dynamically?
-                // Let's stick to the simplest: Assume `window.sagaToken` is set by App.tsx?
-
-                // REVISION: I will update `App.tsx` to set `window.sagaToken` or pass it. 
-                // Actually, I can just import `getAuth` from `firebase/auth`.
-
-                // For now:
-                const token = (window as any).sagaToken; // I'll set this in App.tsx
+                const token = (window as any).sagaToken;
 
                 const res = await fetch(`http://localhost:${port}/api/projects/${projectId}`, {
                     headers: {
@@ -97,22 +57,25 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                 if (data.state && data.state.windows && data.state.windows.length > 0) {
                     console.log("[Space] Loading state from backend:", data.state);
                     loadState(data.state);
+                    initializedRef.current = true;
                 } else {
                     console.log("[Space] No state found. Defaulting to Brainstorm.");
-                    // Only spawn default if explicitly NO state or EMPTY state
-                    if (windows.length === 0) spawnWindow('brainstorm-air');
+                    if (windows.length === 0 && !initializedRef.current) {
+                        spawnWindow('brainstorm-air');
+                        initializedRef.current = true;
+                    }
                 }
-                initializedRef.current = true;
             } catch (err) {
-                console.error(err);
-                if (windows.length === 0) spawnWindow('brainstorm-air');
-                initializedRef.current = true;
+                console.error("[Space] Fetch error:", err);
+                if (windows.length === 0 && !initializedRef.current) {
+                    spawnWindow('brainstorm-air');
+                    initializedRef.current = true;
+                }
             } finally {
                 setLoading(false);
             }
         };
 
-        // We use a ref to prevent double-spawning in React Strict Mode
         if (!initializedRef.current) {
             fetchProject();
         }
@@ -122,14 +85,21 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
     const saveTimeoutRef = useRef<any>(null);
     const lastSavedState = useRef<string>("");
 
+    // Keep a ref to serialize state without closure issues in timeout/cleanup
+    const serializeRef = useRef(serialize);
+    useEffect(() => {
+        serializeRef.current = serialize;
+    }, [serialize]);
+
     useEffect(() => {
         if (!projectId || loading) return;
 
-        const currentState = serialize();
+        const currentState = serializeRef.current();
         const stateString = JSON.stringify(currentState);
 
         if (stateString === lastSavedState.current) return;
 
+        console.debug("[Space] State changed, scheduling auto-save...");
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
         setSaving(true);
@@ -138,7 +108,13 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                 const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
                 const token = (window as any).sagaToken;
 
-                await fetch(`http://localhost:${port}/api/projects/${projectId}`, {
+                if (!token) {
+                    console.warn("[Space] Cannot auto-save: No sagaToken found on window.");
+                    return;
+                }
+
+                console.log("[Space] Auto-saving state to backend...");
+                const res = await fetch(`http://localhost:${port}/api/projects/${projectId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -148,14 +124,23 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                         state: currentState
                     })
                 });
-                lastSavedState.current = stateString;
-                setSaving(false);
-            } catch (err) {
-                console.error("Auto-save failed", err);
-                setSaving(false); // Maybe show error?
-            }
-        }, 2000); // 2 seconds debounce
 
+                if (res.ok) {
+                    lastSavedState.current = stateString;
+                    console.log("[Space] Auto-save successful.");
+                } else {
+                    console.error("[Space] Auto-save failed with status:", res.status);
+                }
+            } catch (err) {
+                console.error("[Space] Auto-save failed:", err);
+            } finally {
+                setSaving(false);
+            }
+        }, 1500); // Slightly faster debounce
+
+        return () => {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        };
     }, [windows, language, projectId, loading]);
 
     // 4. Smart Naming Logic
@@ -495,6 +480,42 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                     {language.toUpperCase()}
                 </button>
             </div>
+            {/* Status Indicators */}
+            <div style={{
+                position: 'fixed',
+                bottom: '20px',
+                right: '250px',
+                zIndex: 10000,
+                display: 'flex',
+                gap: '12px',
+                pointerEvents: 'none'
+            }}>
+                {saving && (
+                    <div style={{
+                        padding: '6px 12px',
+                        backgroundColor: 'rgba(0,0,0,0.6)',
+                        color: 'rgba(255,255,255,0.8)',
+                        borderRadius: '20px',
+                        fontSize: '0.8rem',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        backdropFilter: 'blur(10px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#646cff', animation: 'pulse 1.5s infinite' }} />
+                        Saving...
+                    </div>
+                )}
+            </div>
+
+            <style>{`
+                @keyframes pulse {
+                    0% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.5; transform: scale(0.8); }
+                    100% { opacity: 1; transform: scale(1); }
+                }
+            `}</style>
         </div>
     );
 };
