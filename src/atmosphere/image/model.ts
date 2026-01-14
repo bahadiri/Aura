@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { uploadImageFromUrl, isFirebaseStorageUrl } from '../../utils/storage';
 
 export interface ImageAIRProps {
     src?: string;
@@ -7,6 +8,8 @@ export interface ImageAIRProps {
     title?: string;
     language?: string;
     prompt?: string;
+    projectId?: string;
+    windowId?: string;
     updateWindow?: (data: any) => void;
 }
 
@@ -16,7 +19,26 @@ export const useImageAIR = (props: ImageAIRProps) => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (!props.src && props.query) {
+        console.log(`[ImageAIR] Mount/Update - props.src: "${props.src}", props.query: "${props.query}"`);
+
+        // If we already have a src from Firebase Storage, use it directly (no re-fetch)
+        if (props.src && isFirebaseStorageUrl(props.src)) {
+            console.log(`[ImageAIR] Using persisted Firebase URL: ${props.src}`);
+            setSrc(props.src);
+            setLoading(false);
+            return;
+        }
+
+        // If we have a non-Firebase src (legacy or external), use it but don't re-fetch
+        if (props.src) {
+            console.log(`[ImageAIR] Using existing src: ${props.src}`);
+            setSrc(props.src);
+            setLoading(false);
+            return;
+        }
+
+        // Only search if we have a query but no src
+        if (props.query) {
             setLoading(true);
             const apiKey = import.meta.env.VITE_GOOGLE_SEARCH_API_KEY;
             const cx = import.meta.env.VITE_GOOGLE_SEARCH_CX;
@@ -36,16 +58,25 @@ export const useImageAIR = (props: ImageAIRProps) => {
 
             const runSearch = async () => {
                 try {
-                    console.log(`[ImageAIR] Searching Google for: "${props.query}" with key: ${apiKey?.substring(0, 5)}...`);
+                    console.log(`[ImageAIR] Searching Google for: "${props.query}"`);
                     let data = await searchGoogle(props.query!);
-                    console.log("[ImageAIR] Google Response:", data);
                     let items = data.items || [];
 
                     if (items.length > 0) {
-                        const foundSrc = items[0].link;
-                        setSrc(foundSrc);
+                        const externalUrl = items[0].link;
+
+                        // Upload to Firebase Storage for persistence (using Aura's utility)
+                        const persistentUrl = await uploadImageFromUrl(
+                            externalUrl,
+                            props.projectId || 'default',
+                            props.windowId || `img-${Date.now()}`
+                        );
+
+                        console.log(`[ImageAIR] Persisted to: ${persistentUrl}`);
+                        setSrc(persistentUrl);
+
                         if (props.updateWindow) {
-                            props.updateWindow({ props: { ...props, src: foundSrc } });
+                            props.updateWindow({ props: { ...props, src: persistentUrl } });
                         }
                     } else {
                         setError('Image not found');
@@ -64,10 +95,6 @@ export const useImageAIR = (props: ImageAIRProps) => {
             };
 
             runSearch();
-
-        } else if (props.src) {
-            setSrc(props.src);
-            setLoading(false);
         }
     }, [props.src, props.query]);
 

@@ -27,6 +27,36 @@ Aura is built on three pillars:
 -   **Data Analysis**: A [Query AIR](documents/Developer-Guide.md#standard-aursquery) can broadcast a selected dataset via [Flux](documents/Architecture.md#data-flow-flux).
 -   **Complex Dashboards**: Build mission-control style interfaces where every panel is aware of the others context.
 
+## Configuration
+
+When integrating Aura into a host application, the following environment variables should be configured:
+
+### Firebase (Required for Persistence)
+```env
+VITE_FIREBASE_API_KEY=your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+```
+
+### AIR-Specific Credentials
+
+| AIR | Required Variables |
+|-----|--------------------|
+| **ImageAIR** | `VITE_GOOGLE_SEARCH_API_KEY`, `VITE_GOOGLE_SEARCH_CX` |
+| **YoutubePlayerAIR** | Uses backend `/api/search/video` endpoint |
+| **PlotAIR** | Uses backend `/api/search` endpoint (TMDB) |
+
+### Backend Integration
+Aura expects certain backend endpoints for AI features:
+- `/api/chat/reflect` - AI reflection for intent detection
+- `/api/search` - Movie/TV search (TMDB)
+- `/api/search/video` - YouTube video search
+
+> **Note**: The host app (e.g., Saga) must provide these endpoints. Aura handles Firebase Storage uploads directly.
+
 ## Documentation
 
 Full documentation is available in the [Project Wiki](https://github.com/bahadiri/Aura/wiki).

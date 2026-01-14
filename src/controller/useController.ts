@@ -47,10 +47,21 @@ export function useController(initialState?: any) {
         } else if (typeof manifest.meta.startPosition === 'object' && 'x' in manifest.meta.startPosition) {
             position = manifest.meta.startPosition as { x: number; y: number };
         }
-        // Removed findOptimalPosition call to enforce simple floating behavior
+
+        // Use explicitly provided ID if available (for Shared Identity/Pop-out)
+        // Check if props has instanceId or if we should pass it as a separate arg.
+        // Let's look for props.instanceId
+        const instanceId = props.instanceId || `${manifestId}-${Date.now()}`;
+
+        // Check if window already exists
+        const existing = windows.find(w => w.id === instanceId);
+        if (existing) {
+            focusWindow(instanceId);
+            return;
+        }
 
         const newWindow: WindowState = {
-            id: `${manifestId}-${Date.now()}`,
+            id: instanceId,
             manifestId,
             props,
             zIndex: topZ + 1,
@@ -83,6 +94,11 @@ export function useController(initialState?: any) {
     // Window Actions
     const closeWindow = (id: string) => {
         setWindows(prev => prev.filter(w => w.id !== id));
+        flux.dispatch({
+            type: 'WINDOW_CLOSED',
+            payload: { id },
+            to: 'all' // Broadcast to anyone listening
+        });
     };
 
     const minimizeWindow = (id: string) => {
@@ -132,10 +148,14 @@ export function useController(initialState?: any) {
             setWindows(state.windows);
             setTopZ(state.topZ || 10);
             if (state.language) setLanguage(state.language);
+        } else {
+            // Explicit Reset for Project Isolation
+            setWindows([]);
+            setTopZ(1);
         }
     };
 
-    const reflect = useCallback(async (message: string) => {
+    const reflect = useCallback(async (message: string, messages: any[] = []) => {
         const available_airs = atmosphere.getAll().map(m => ({
             id: m.id,
             title: m.meta.title,
@@ -148,15 +168,13 @@ export function useController(initialState?: any) {
             const res = await fetch(`${baseUrl}/api/chat/reflect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, available_airs })
+                body: JSON.stringify({ message, messages, available_airs })
             });
             const actions = await res.json();
 
             if (Array.isArray(actions)) {
-                if (Array.isArray(actions)) {
-                    // Chat-First UX: Do NOT auto-spawn. Return actions for ChatInterface to render inline.
-                    return actions;
-                }
+                // Chat-First UX: Do NOT auto-spawn. Return actions for ChatInterface to render inline.
+                return actions;
             }
         } catch (err) {
             console.error("[Controller] Reflection failed:", err);
