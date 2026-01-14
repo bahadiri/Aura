@@ -144,7 +144,8 @@ export function useController(initialState?: any) {
 
         try {
             const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-            const res = await fetch(`http://localhost:${port}/api/chat/reflect`, {
+            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
+            const res = await fetch(`${baseUrl}/api/chat/reflect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message, available_airs })

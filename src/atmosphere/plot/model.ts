@@ -40,7 +40,8 @@ export const usePlotAIR = ({
         if (mode === 'movie' && !moviePlot && query) {
             setIsSearching(true);
             const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-            fetch(`http://localhost:${port}/api/search?q=${encodeURIComponent(query)}`)
+            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
+            fetch(`${baseUrl}/api/search?q=${encodeURIComponent(query)}`)
                 .then(res => res.json())
                 .then(data => {
                     let newPlot = "";

@@ -23,6 +23,8 @@ describe('BrainstormAIR View', () => {
                 isTyping={false}
                 voice={mockVoice}
                 onSend={() => { }}
+                isSpeakingEnabled={true}
+                setIsSpeakingEnabled={() => { }}
             />
         );
 

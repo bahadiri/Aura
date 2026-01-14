@@ -24,7 +24,8 @@ export const useYoutubePlayer = ({ videoId: initialVideoId, query, autoplay = fa
             setIsLoading(true);
             setError('');
             const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-            fetch(`http://localhost:${port}/api/search/video?q=${encodeURIComponent(query)}`)
+            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
+            fetch(`${baseUrl}/api/search/video?q=${encodeURIComponent(query)}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.videoId) {

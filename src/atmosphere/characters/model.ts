@@ -29,7 +29,9 @@ export const useCharacters = ({
     useEffect(() => {
         if (!initialCharacters.length && query) {
             setIsLoading(true);
-            fetch(`http://localhost:8000/api/search/characters?q=${encodeURIComponent(query)}`)
+            // Default to 8001 (Saga Backend) if undefined, consolidating ports
+            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:8001`;
+            fetch(`${baseUrl}/api/search/characters?q=${encodeURIComponent(query)}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.characters && data.characters.length > 0) {

@@ -67,7 +67,8 @@ export const useBrainstorm = ({ initialMessages, onReflect, windows }: UseBrains
             const openAirIds = Array.from(new Set(windows.map(w => w.manifestId)));
             const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8000';
 
-            const response = await fetch(`http://localhost:${port}/api/chat/reflection`, {
+            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
+            const response = await fetch(`${baseUrl}/api/chat/reflection`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

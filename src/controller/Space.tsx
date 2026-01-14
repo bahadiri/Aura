@@ -43,7 +43,8 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                 const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
                 const token = (window as any).sagaToken;
 
-                const res = await fetch(`http://localhost:${port}/api/projects/${projectId}`, {
+                const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
+                const res = await fetch(`${baseUrl}/api/projects/${projectId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -107,7 +108,8 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                 }
 
                 console.log("[Space] Auto-saving state to backend...");
-                const res = await fetch(`http://localhost:${port}/api/projects/${projectId}`, {
+                const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
+                const res = await fetch(`${baseUrl}/api/projects/${projectId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -160,7 +162,8 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                     try {
                         const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
                         // Use fetch directly
-                        const res = await fetch(`http://localhost:${port}/api/generate-project-title`, {
+                        const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
+                        const res = await fetch(`${baseUrl}/api/generate-project-title`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ prompts: accumulatedPrompts.current })
@@ -196,7 +199,8 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
             const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
             const token = (window as any).sagaToken;
 
-            await fetch(`http://localhost:${port}/api/projects/${projectId}`, {
+            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
+            await fetch(`${baseUrl}/api/projects/${projectId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
