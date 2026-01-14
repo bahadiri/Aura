@@ -32,8 +32,7 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
     useEffect(() => {
         if (!projectId) {
             setLoading(false);
-            if (!initializedRef.current && windows.length === 0) {
-                spawnWindow('brainstorm-air');
+            if (!initializedRef.current) {
                 initializedRef.current = true;
             }
             return;
@@ -59,18 +58,12 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                     loadState(data.state);
                     initializedRef.current = true;
                 } else {
-                    console.log("[Space] No state found. Defaulting to Brainstorm.");
-                    if (windows.length === 0 && !initializedRef.current) {
-                        spawnWindow('brainstorm-air');
-                        initializedRef.current = true;
-                    }
+                    console.log("[Space] No state found.");
+                    initializedRef.current = true;
                 }
             } catch (err) {
                 console.error("[Space] Fetch error:", err);
-                if (windows.length === 0 && !initializedRef.current) {
-                    spawnWindow('brainstorm-air');
-                    initializedRef.current = true;
-                }
+                initializedRef.current = true;
             } finally {
                 setLoading(false);
             }
@@ -226,41 +219,16 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
-            {/* Header / Status Bar */}
-            <div style={{
-                height: 40,
-                background: 'rgba(20, 20, 25, 0.9)',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0 20px',
-                justifyContent: 'space-between',
-                zIndex: 2000
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <a href="/" style={{ textDecoration: 'none', color: '#888', fontSize: 14 }}>&larr; Projects</a>
-                    <div style={{ width: 1, height: 16, background: '#333' }} />
-                    <input
-                        value={project?.name || "Untitled Project"}
-                        onChange={(e) => handleRename(e.target.value)}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#fff',
-                            fontWeight: 600,
-                            fontSize: 14,
-                            width: 200,
-                            outline: 'none'
-                        }}
-                    />
-                </div>
-                <div style={{ color: '#666', fontSize: 12, fontWeight: 500 }}>
-                    {saving ? "Saving..." : "Saved"}
-                </div>
-            </div>
-
             {/* Main Desktop Area */}
-            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+            <div style={{
+                flex: 1,
+                position: 'relative',
+                overflow: 'hidden',
+                backgroundColor: 'var(--bg-primary)',
+                backgroundImage: 'radial-gradient(var(--text-tertiary) 1px, transparent 1px)',
+                backgroundSize: '24px 24px',
+                opacity: 1 // Ensure visibility
+            }}>
                 {windows.map(win => {
                     const manifest = atmosphere.get(win.manifestId);
                     if (!manifest) return null;
@@ -293,54 +261,55 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
 
                             style={{
                                 zIndex: win.zIndex,
-                                background: 'rgba(20, 20, 25, 0.85)',
+                                background: 'rgba(255, 255, 255, 0.85)',
                                 backdropFilter: 'blur(20px) saturate(180%)',
-                                borderRadius: 20,
-                                boxShadow: '0 20px 50px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 16,
+                                boxShadow: '0 10px 40px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)',
+                                border: '1px solid rgba(255,255,255,0.4)',
                                 overflow: 'hidden',
                                 display: win.isMinimized ? 'none' : 'flex',
-                                flexDirection: 'column'
+                                flexDirection: 'column',
+                                color: '#000'
                             }}
                             onMouseDown={() => focusWindow(win.id)}
                             dragHandleClassName="window-drag-handle"
                         >
                             {/* Title Bar */}
                             <div className="window-drag-handle" style={{
-                                height: 44,
-                                background: 'rgba(255,255,255,0.03)',
-                                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                                height: 40,
+                                background: 'rgba(0,0,0,0.02)',
+                                borderBottom: '1px solid rgba(0,0,0,0.05)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                padding: '0 18px',
+                                padding: '0 16px',
                                 justifyContent: 'space-between',
                                 cursor: 'move',
                                 userSelect: 'none'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 500, color: '#fff', letterSpacing: '0.3px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>
                                     {(manifest.meta.icon.startsWith('http') || manifest.meta.icon.startsWith('/')) ? (
-                                        <img src={manifest.meta.icon} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                                        <img src={manifest.meta.icon} alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} />
                                     ) : (
-                                        <span style={{ fontSize: 18 }}>{manifest.meta.icon}</span>
+                                        <span style={{ fontSize: 16 }}>{manifest.meta.icon}</span>
                                     )}
                                     <span>{title}</span>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: 8 }}>
+                                <div style={{ display: 'flex', gap: 6 }}>
                                     {/* Minimize Button */}
                                     <button
                                         onClick={(e) => { e.stopPropagation(); minimizeWindow(win.id); }}
                                         style={{
-                                            width: 26, height: 26, borderRadius: '50%', border: 'none',
-                                            background: 'rgba(255,255,255,0.08)', color: '#aaa',
+                                            width: 24, height: 24, borderRadius: '50%', border: 'none',
+                                            background: 'rgba(0,0,0,0.05)', color: '#666',
                                             cursor: 'pointer', display: 'flex',
                                             alignItems: 'center', justifyContent: 'center',
                                             transition: 'all 0.2s'
                                         }}
-                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff'; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#aaa'; }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.1)'; e.currentTarget.style.color = '#000'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = '#666'; }}
                                     >
-                                        <svg width="10" height="2" viewBox="0 0 10 2" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <svg width="8" height="2" viewBox="0 0 10 2" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <rect width="10" height="2" rx="1" fill="currentColor" />
                                         </svg>
                                     </button>
@@ -350,16 +319,16 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                                         <button
                                             onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }}
                                             style={{
-                                                width: 26, height: 26, borderRadius: '50%', border: 'none',
-                                                background: 'rgba(255,255,255,0.08)', color: '#aaa',
+                                                width: 24, height: 24, borderRadius: '50%', border: 'none',
+                                                background: 'rgba(0,0,0,0.05)', color: '#666',
                                                 cursor: 'pointer', display: 'flex',
                                                 alignItems: 'center', justifyContent: 'center',
                                                 transition: 'all 0.2s'
                                             }}
                                             onMouseEnter={(e) => { e.currentTarget.style.background = '#ff4b4b'; e.currentTarget.style.color = 'white'; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#aaa'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; e.currentTarget.style.color = '#666'; }}
                                         >
-                                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <svg width="8" height="8" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M1 1L9 9M1 9L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                                             </svg>
                                         </button>
@@ -368,7 +337,7 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                             </div>
 
                             {/* Content */}
-                            <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', color: '#fff' }}>
+                            <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', color: 'var(--text-primary)' }}>
                                 <Component {...win.props} windows={windows} reflect={reflect} language={language} updateWindow={(data: any) => controller.updateWindow(win.id, data)} />
                             </div>
                         </Rnd>
@@ -382,17 +351,17 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                 bottom: 24,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                height: 76,
-                background: 'rgba(20, 20, 25, 0.7)',
-                backdropFilter: 'blur(30px) saturate(150%)',
-                borderRadius: 28,
-                border: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: '0 15px 40px rgba(0,0,0,0.4)',
+                height: 64,
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                borderRadius: 24,
+                border: '1px solid rgba(255,255,255,0.8)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 12,
-                padding: '0 24px',
+                padding: '0 20px',
                 zIndex: 10000,
                 width: 'auto',
                 maxWidth: '90vw'
@@ -427,33 +396,34 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                                 transition: 'transform 0.2s',
                                 position: 'relative'
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                             title={title}
                         >
                             <div style={{
-                                width: 48,
-                                height: 48,
-                                borderRadius: 14,
-                                background: 'rgba(255,255,255,0.05)',
-                                boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+                                width: 42,
+                                height: 42,
+                                borderRadius: 12,
+                                background: '#fff',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.08)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifySelf: 'center',
                                 justifyContent: 'center',
-                                fontSize: 26,
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                fontSize: 22,
+                                border: '1px solid rgba(0,0,0,0.05)',
                                 transition: 'all 0.2s'
                             }}>
                                 {(manifest.meta.icon.startsWith('http') || manifest.meta.icon.startsWith('/')) ? (
-                                    <img src={manifest.meta.icon} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                                    <img src={manifest.meta.icon} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
                                 ) : (
                                     manifest.meta.icon
                                 )}
                             </div>
                             <div style={{
                                 width: 4, height: 4, borderRadius: '50%',
-                                background: '#646cff', marginTop: 4
+                                background: 'var(--accent-highlight)', marginTop: 4,
+                                opacity: win.isMinimized ? 0.3 : 1
                             }} />
                         </div>
                     );

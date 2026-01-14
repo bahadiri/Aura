@@ -40,18 +40,21 @@ export const usePlotAIR = ({
         if (mode === 'movie' && !moviePlot && query) {
             setIsSearching(true);
             const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-            fetch(`http://localhost:${port}/api/search/image?q=${encodeURIComponent(query)}`)
+            fetch(`http://localhost:${port}/api/search?q=${encodeURIComponent(query)}`)
                 .then(res => res.json())
                 .then(data => {
                     let newPlot = "";
-                    if (data.overview) {
-                        newPlot = data.overview;
-                    } else if (data.url) {
-                        // Fallback if we only got image? 
-                        newPlot = "Found movie: " + data.title + ". (Plot unavailable in current API response)";
+                    if (data.results && data.results.length > 0) {
+                        const bestMatch = data.results[0];
+                        if (bestMatch.overview) {
+                            newPlot = bestMatch.overview;
+                        } else {
+                            newPlot = `Found movie: ${bestMatch.title}. (Plot unavailable)`;
+                        }
                     } else {
                         newPlot = "Could not find plot for: " + query;
                     }
+
                     setFetchedPlot(newPlot);
 
                     if (updateWindow && newPlot) {

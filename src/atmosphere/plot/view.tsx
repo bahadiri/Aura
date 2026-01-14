@@ -62,6 +62,7 @@ export const View: React.FC<ViewProps> = ({
                                 <div style={{
                                     fontSize: '1rem',
                                     lineHeight: '1.5',
+                                    color: 'var(--text-primary)',
                                     opacity: 0.9,
                                     whiteSpace: 'pre-wrap'
                                 }}>

@@ -30,20 +30,24 @@ export function useController(initialState?: any) {
         const width = manifest.meta.width || 400;
         const height = manifest.meta.height || 300;
 
-        // Calculate Position
-        let position = { x: 100, y: 100 };
+        // Calculate Position - Default to floating centered/staggered
+        const count = windows.length;
+        const offset = count * 30; // Stagger slightly
+
+        let position = {
+            x: 100 + offset,
+            y: 100 + offset
+        };
 
         if (manifest.meta.startPosition === 'center') {
             position = {
-                x: (window.innerWidth / 2) - (width / 2),
-                y: (window.innerHeight / 2) - (height / 2)
+                x: (window.innerWidth / 2) - (width / 2) + offset,
+                y: (window.innerHeight / 2) - (height / 2) + offset
             };
         } else if (typeof manifest.meta.startPosition === 'object' && 'x' in manifest.meta.startPosition) {
             position = manifest.meta.startPosition as { x: number; y: number };
-        } else {
-            // Smart Positioning Logic
-            position = findOptimalPosition(windows, { width, height }, { width: window.innerWidth, height: window.innerHeight });
         }
+        // Removed findOptimalPosition call to enforce simple floating behavior
 
         const newWindow: WindowState = {
             id: `${manifestId}-${Date.now()}`,
@@ -139,7 +143,7 @@ export function useController(initialState?: any) {
         }));
 
         try {
-            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8000';
+            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
             const res = await fetch(`http://localhost:${port}/api/chat/reflect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -148,10 +152,10 @@ export function useController(initialState?: any) {
             const actions = await res.json();
 
             if (Array.isArray(actions)) {
-                actions.forEach((action: any) => {
-                    spawnWindow(action.id, action.props);
-                });
-                return actions;
+                if (Array.isArray(actions)) {
+                    // Chat-First UX: Do NOT auto-spawn. Return actions for ChatInterface to render inline.
+                    return actions;
+                }
             }
         } catch (err) {
             console.error("[Controller] Reflection failed:", err);

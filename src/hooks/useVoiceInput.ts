@@ -41,7 +41,23 @@ export const useVoiceInput = (language: string = 'en-US') => {
         error: null,
     });
 
+    const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
     const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+    // Initial voices fetch
+    useEffect(() => {
+        const updateVoices = () => {
+            const voices = window.speechSynthesis.getVoices();
+            console.log("[Voice] Available voices:", voices.length);
+            setAvailableVoices(voices);
+        };
+        updateVoices();
+        window.speechSynthesis.onvoiceschanged = updateVoices;
+        return () => {
+            window.speechSynthesis.onvoiceschanged = null;
+        };
+    }, []);
+
 
     useEffect(() => {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -56,6 +72,7 @@ export const useVoiceInput = (language: string = 'en-US') => {
         recognition.lang = language;
 
         recognition.onstart = () => {
+            console.log("[Voice] Listening started");
             setState(prev => ({ ...prev, isListening: true, error: null }));
         };
 
@@ -71,6 +88,8 @@ export const useVoiceInput = (language: string = 'en-US') => {
                 }
             }
 
+            console.log(`[Voice] Result: Final="${finalTranscript}", Interim="${interimTranscript}"`);
+
             setState(prev => ({
                 ...prev,
                 transcript: prev.transcript + finalTranscript,
@@ -79,7 +98,7 @@ export const useVoiceInput = (language: string = 'en-US') => {
         };
 
         recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-            console.error('Speech recognition error', event.error);
+            console.error('[Voice] Error:', event.error);
             if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
                 setState(prev => ({ ...prev, error: 'PERMISSION_DENIED', isListening: false }));
             } else {
@@ -88,6 +107,7 @@ export const useVoiceInput = (language: string = 'en-US') => {
         };
 
         recognition.onend = () => {
+            console.log("[Voice] Listening stopped");
             setState(prev => ({ ...prev, isListening: false }));
         };
 
@@ -142,7 +162,7 @@ export const useVoiceInput = (language: string = 'en-US') => {
         setState(prev => ({ ...prev, transcript: '', interimTranscript: '' }));
     }, []);
 
-    const speak = useCallback((text: string) => {
+    const speak = useCallback((text: string, voiceURI?: string) => {
         if (!('speechSynthesis' in window)) return;
 
         // Stop listening while speaking to avoid feedback
@@ -156,21 +176,30 @@ export const useVoiceInput = (language: string = 'en-US') => {
 
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = language;
+
+        // Find selected voice
+        const selectedVoice = availableVoices.find(v => v.voiceURI === voiceURI);
+        if (selectedVoice) {
+            utterance.voice = selectedVoice;
+        } else {
+            utterance.lang = language;
+        }
 
         // Optional: add some personality/aura specific settings
-        utterance.pitch = 1.1;
-        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        utterance.rate = 1.0;
 
         utterance.onstart = () => setState(prev => ({ ...prev, isSpeaking: true }));
         utterance.onend = () => setState(prev => ({ ...prev, isSpeaking: false }));
         utterance.onerror = () => setState(prev => ({ ...prev, isSpeaking: false }));
 
         window.speechSynthesis.speak(utterance);
-    }, [language, state.isListening]);
+    }, [language, state.isListening, availableVoices]);
+
 
     return {
         ...state,
+        availableVoices,
         startListening,
         stopListening,
         resetTranscript,
