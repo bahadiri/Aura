@@ -44,7 +44,10 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                 const headers: any = {};
                 if (token) headers['Authorization'] = `Bearer ${token}`;
 
+                console.log(`[Space] Fetching project ${projectId}, hasToken: ${!!token}`);
+
                 const res = await fetch(`${baseUrl}/api/projects/${projectId}`, { headers });
+                console.log(`[Space] Fetch response: ${res.status}`);
                 if (res.ok) {
                     const data = await res.json();
                     setProject(data);
@@ -53,6 +56,9 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                         loadState(data.state);
                     }
                     initializedRef.current = true;
+                } else {
+                    const errorText = await res.text();
+                    console.error(`[Space] Failed to load project: ${res.status}`, errorText);
                 }
             } catch (err) {
                 console.error("[Space] Failed to load project", err);
@@ -139,38 +145,51 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
         };
     }, [projectId, windows, loading, project]);
 
-    // 4. Auto-Rename Logic
+    // 4. Auto-Rename Logic (triggers at 2 messages, updates at 10)
     const promptCount = useRef(0);
     const accumulatedPrompts = useRef<string[]>([]);
-    const hasAutoRenamed = useRef(false);
+    const lastRenameAt = useRef(0);
+
+    const generateTitle = async () => {
+        try {
+            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
+            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
+            console.log(`[Space] Generating title from ${accumulatedPrompts.current.length} prompts`);
+            const res = await fetch(`${baseUrl}/api/generate-project-title`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompts: accumulatedPrompts.current })
+            });
+            const data = await res.json();
+            console.log(`[Space] Title API response:`, data);
+            if (data.title && data.title !== 'Untitled Project') {
+                console.log(`[Space] Auto-rename to: ${data.title}`);
+                handleRename(data.title);
+                lastRenameAt.current = promptCount.current;
+            } else {
+                console.log(`[Space] Title not changed - received: "${data.title}"`);
+            }
+        } catch (err) {
+            console.error("[Space] Auto-rename failed", err);
+        }
+    };
 
     useEffect(() => {
         const unsubscribe = flux.subscribe((msg: FluxMessage) => {
             if (msg.type === 'CHAT_PROMPT' && msg.to === 'assistant') {
-                if (hasAutoRenamed.current || !project || project.name !== 'Untitled Project') return;
+                if (!project) return;
 
                 promptCount.current += 1;
                 accumulatedPrompts.current.push(msg.payload.text);
+                console.log(`[Space] Prompt ${promptCount.current}: "${msg.payload.text.substring(0, 50)}..."`);
 
-                if (promptCount.current === 2) {
-                    hasAutoRenamed.current = true;
-                    (async () => {
-                        try {
-                            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-                            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
-                            const res = await fetch(`${baseUrl}/api/generate-project-title`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ prompts: accumulatedPrompts.current })
-                            });
-                            const data = await res.json();
-                            if (data.title) {
-                                handleRename(data.title);
-                            }
-                        } catch (err) {
-                            console.error("Auto-rename failed", err);
-                        }
-                    })();
+                // Trigger at 2 messages (first rename)
+                if (promptCount.current === 2 && project.name === 'Untitled Project') {
+                    generateTitle();
+                }
+                // Update at 10 messages (refine based on more context)
+                else if (promptCount.current === 10 && lastRenameAt.current < 10) {
+                    generateTitle();
                 }
             }
         });
