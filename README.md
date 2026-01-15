@@ -46,7 +46,7 @@ VITE_FIREBASE_APP_ID=your-app-id
 | AIR | Required Variables |
 |-----|--------------------|
 | **ImageAIR** | `VITE_GOOGLE_SEARCH_API_KEY`, `VITE_GOOGLE_SEARCH_CX` |
-| **YoutubePlayerAIR** | Uses backend `/api/search/video` endpoint |
+| **YoutubePlayerAIR** | `VITE_YOUTUBE_API_KEY` (optional, falls back to backend) |
 | **PlotAIR** | Uses backend `/api/search` endpoint (TMDB) |
 
 ### Backend Integration

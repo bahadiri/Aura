@@ -14,13 +14,15 @@ export interface UseCharactersProps {
     query?: string;
     title?: string;
     onSelect?: (char: Character) => void;
+    updateWindow?: (data: any) => void;
 }
 
 export const useCharacters = ({
     characters: initialCharacters = [],
     query,
     title,
-    onSelect
+    onSelect,
+    updateWindow
 }: UseCharactersProps) => {
     const [characters, setCharacters] = useState<Character[]>(initialCharacters);
     const [isLoading, setIsLoading] = useState(!initialCharacters.length && !!query);
@@ -36,6 +38,11 @@ export const useCharacters = ({
                 .then(data => {
                     if (data.characters && data.characters.length > 0) {
                         setCharacters(data.characters);
+                        // PERSISTENCE: Save fetched characters to window state
+                        if (updateWindow) {
+                            console.log("[CharactersAIR] Persisting characters to window state");
+                            updateWindow({ props: { characters: data.characters, query, title } });
+                        }
                     } else if (data.error) {
                         setError(data.error);
                     } else {

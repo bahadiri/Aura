@@ -1,11 +1,8 @@
 import React from 'react';
-import { useTasks, TaskItem } from './model';
+import { useTasks, TaskItem, TasksAIRProps as ModelProps } from './model';
 import { View } from './view';
 
-export interface TasksAIRProps {
-    initialTasks?: TaskItem[];
-    title?: string;
-}
+export type TasksAIRProps = ModelProps;
 
 export const TasksAIR: React.FC<TasksAIRProps> = (props) => {
     const { tasks, title, toggleTask } = useTasks(props);

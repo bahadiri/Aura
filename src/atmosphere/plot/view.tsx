@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from '../../styles/aur.module.css';
 import { Episode } from './model';
 
@@ -11,6 +11,8 @@ interface ViewProps {
     episodes: Episode[];
     loadingMap: Record<string, boolean>;
     onExpandSummary: (ep: Episode) => void;
+    expandPlot: (q: string, text: string) => void;
+    expanding: boolean;
 }
 
 export const View: React.FC<ViewProps> = ({
@@ -21,32 +23,35 @@ export const View: React.FC<ViewProps> = ({
     isSearching,
     episodes,
     loadingMap,
-    onExpandSummary
+    onExpandSummary,
+    expandPlot,
+    expanding
 }) => {
     return (
         <div className={styles.screenContent}>
-            <div className={styles.aurSectionTitle}>
-                {seriesTitle} - {mode === 'movie' ? 'PLOT' : 'EPISODES'}
+            <div className={styles.aurSectionTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{seriesTitle || "UNKNOWN TITLE"} - {mode === 'movie' ? 'PLOT' : 'EPISODES'}</span>
             </div>
 
             {/* Prompt Section */}
             {displayPrompt && (
                 <div style={{
-                    background: 'rgba(76, 201, 240, 0.1)',
-                    border: '1px solid rgba(76, 201, 240, 0.3)',
+                    background: 'var(--bg-highlight)',
+                    border: '1px solid var(--border-subtle)',
                     borderRadius: 8,
                     padding: 10,
                     marginBottom: 15,
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    color: 'var(--text-primary)'
                 }}>
-                    <strong style={{ color: '#4cc9f0' }}>Prompt:</strong> {displayPrompt}
+                    <strong style={{ color: 'var(--accent-primary)' }}>Prompt:</strong> {displayPrompt}
                 </div>
             )}
 
             <div className={styles.scrollArea}>
                 {mode === 'movie' ? (
                     <div className={styles.listContainer}>
-                        {isSearching ? (
+                        {isSearching || expanding ? (
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -55,15 +60,19 @@ export const View: React.FC<ViewProps> = ({
                                 padding: 40
                             }}>
                                 <div className={styles.hourglass}></div>
-                                <p style={{ marginTop: 12, opacity: 0.6, fontSize: '0.8rem' }}>Searching Plot...</p>
+                                <p style={{ marginTop: 12, opacity: 0.6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                    {expanding ? "Expanding Plot..." : "Searching Plot..."}
+                                </p>
                             </div>
                         ) : (
-                            <div className={styles.listItem} style={{ cursor: 'default' }}>
+                            <div className={styles.listItem} style={{
+                                cursor: 'default',
+                                position: 'relative'
+                            }}>
                                 <div style={{
                                     fontSize: '1rem',
-                                    lineHeight: '1.5',
+                                    lineHeight: '1.6',
                                     color: 'var(--text-primary)',
-                                    opacity: 0.9,
                                     whiteSpace: 'pre-wrap'
                                 }}>
                                     {moviePlot || "No plot synopsis available."}
@@ -79,27 +88,30 @@ export const View: React.FC<ViewProps> = ({
                                 <div key={ep.id} className={styles.listItem} style={{ cursor: 'default' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div>
-                                            <strong>S{ep.season}E{ep.episode}:</strong> {ep.title}
+                                            <strong style={{ color: 'var(--accent-primary)' }}>S{ep.season} E{ep.episode}</strong>
+                                            <span style={{ marginLeft: 8, color: 'var(--text-primary)' }}>{ep.title}</span>
+                                            {ep.air_date && <span style={{ opacity: 0.5, fontSize: '0.8rem', marginLeft: 8, color: 'var(--text-secondary)' }}>({ep.air_date})</span>}
                                         </div>
                                         <button
                                             onClick={() => onExpandSummary(ep)}
                                             className={styles.actionButton}
-                                            style={{ fontSize: '0.8rem', padding: '4px 8px', marginTop: 0 }}
+                                            style={{ fontSize: '0.75rem', padding: '4px 10px', marginTop: 0, background: 'var(--bg-highlight)' }}
                                             disabled={isLoading}
                                         >
-                                            {isLoading ? '...' : (ep.summary ? 'Reload' : 'Summary')}
+                                            {isLoading ? '...' : (ep.summary ? 'Refetch' : 'Summary')}
                                         </button>
                                     </div>
 
                                     {/* Collapsible Lazy Content */}
                                     {ep.summary && (
                                         <div style={{
-                                            marginTop: 10,
-                                            paddingTop: 10,
-                                            borderTop: '1px solid rgba(255,255,255,0.1)',
+                                            marginTop: 12,
+                                            paddingTop: 12,
+                                            borderTop: '1px solid var(--border-subtle)',
                                             fontSize: '0.9rem',
                                             opacity: 0.8,
-                                            fontStyle: 'italic'
+                                            lineHeight: '1.5',
+                                            color: 'var(--text-primary)'
                                         }}>
                                             {ep.summary}
                                         </div>

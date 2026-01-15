@@ -16,12 +16,6 @@ test.describe('Aura AIR Verification', () => {
         await expect(img).toBeVisible();
     });
 
-    test('should spawn BrainstormAIR manually', async ({ page }) => {
-        await page.click('text=Spawn Brainstorm');
-        const windowTitle = page.locator('.window-drag-handle >> text=Brainstorm');
-        await expect(windowTitle).toBeVisible();
-    });
-
     test('should verify i18n toggle with SeriesEpisodesAIR', async ({ page }) => {
         // Spawn Series AIR
         await page.click('text=Spawn Gibi');

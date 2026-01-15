@@ -28,7 +28,7 @@
     min-height: 0;
 }
 
-/* Chat Styles (BrainstormAUR) */
+/* Chat Styles (shared across AIRs) */
 .chatWindow {
     flex: 1;
     overflow-y: auto;

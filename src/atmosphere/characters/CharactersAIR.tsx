@@ -7,13 +7,15 @@ export interface CharactersAIRProps {
     query?: string;
     characters?: Character[];
     onSelect?: (char: Character) => void;
+    updateWindow?: (data: any) => void;
 }
 
 export const CharactersAIR: React.FC<CharactersAIRProps> = ({
     title,
     query,
     characters: initialCharacters,
-    onSelect
+    onSelect,
+    updateWindow
 }) => {
     const {
         characters,
@@ -21,7 +23,7 @@ export const CharactersAIR: React.FC<CharactersAIRProps> = ({
         error,
         handleSelect,
         displayTitle
-    } = useCharacters({ characters: initialCharacters, query, title, onSelect });
+    } = useCharacters({ characters: initialCharacters, query, title, onSelect, updateWindow });
 
     return (
         <View

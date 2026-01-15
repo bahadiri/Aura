@@ -280,7 +280,7 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                                 </div>
                                 <div style={{ display: 'flex', gap: 6 }}>
                                     <button onClick={(e) => { e.stopPropagation(); minimizeWindow(win.id); }}>-</button>
-                                    {win.manifestId !== 'brainstorm-air' && <button onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }}>×</button>}
+                                    <button onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }}>×</button>
                                 </div>
                             </div>
                             <div style={{ flex: 1, overflow: 'hidden' }}>

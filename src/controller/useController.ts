@@ -49,8 +49,6 @@ export function useController(initialState?: any) {
         }
 
         // Use explicitly provided ID if available (for Shared Identity/Pop-out)
-        // Check if props has instanceId or if we should pass it as a separate arg.
-        // Let's look for props.instanceId
         const instanceId = props.instanceId || `${manifestId}-${Date.now()}`;
 
         // Check if window already exists
@@ -120,8 +118,6 @@ export function useController(initialState?: any) {
     const updateWindow = (id: string, data: any) => {
         setWindows(prev => prev.map(w => {
             if (w.id === id) {
-                // Support updating top-level properties like position/size
-                // AND deep merging props if 'props' key is present.
                 const { props, ...topLevel } = data;
 
                 let newProps = w.props;
@@ -155,7 +151,7 @@ export function useController(initialState?: any) {
         }
     };
 
-    const reflect = useCallback(async (message: string, messages: any[] = []) => {
+    const reflect = useCallback(async (message: string, messages: any[] = [], openAIRs: string[] = []) => {
         const available_airs = atmosphere.getAll().map(m => ({
             id: m.id,
             title: m.meta.title,
@@ -168,7 +164,7 @@ export function useController(initialState?: any) {
             const res = await fetch(`${baseUrl}/api/chat/reflect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, messages, available_airs })
+                body: JSON.stringify({ message, messages, available_airs, open_airs: openAIRs })
             });
             const actions = await res.json();
 
@@ -182,6 +178,29 @@ export function useController(initialState?: any) {
         return [];
     }, [spawnWindow]);
 
+    const getContext = useCallback(() => {
+        const context: any = {
+            plots: [],
+            characters: [],
+            currentTheme: null
+        };
+
+        windows.forEach(w => {
+            // Plot AIR Data
+            if (w.props.moviePlot) {
+                context.plots.push({ source: w.props.seriesTitle || "Movie", content: w.props.moviePlot });
+            }
+            if (w.props.initialEpisodes) {
+                // Summarize episodes if needed, or just mention they are open
+                context.plots.push({ source: w.props.seriesTitle || "Series", episodeCount: w.props.initialEpisodes.length });
+            }
+
+            // Other AIRs...
+        });
+
+        return context;
+    }, [windows]);
+
     return {
         windows,
         spawnWindow,
@@ -193,6 +212,7 @@ export function useController(initialState?: any) {
         reflect,
         updateWindow,
         serialize,
-        loadState
+        loadState,
+        getContext
     };
 }

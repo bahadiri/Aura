@@ -5,10 +5,11 @@ export const NoteTakerManifest: AIRManifest = {
     id: 'note-taker-air',
     component: NoteTakerAIR,
     meta: {
-        title: 'Sticky Note',
+        title: 'Notes',
         icon: '📝',
-        description: 'Simple scratchpad for text.',
-        width: 300,
-        height: 300
+        description: 'Document-style note editor with AI polish.',
+        width: 600,
+        height: 700,
+        startPosition: 'center'
     }
 };
