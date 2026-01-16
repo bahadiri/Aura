@@ -63,47 +63,46 @@ export const uploadImageFromUrl = async (
     projectId: string = 'default',
     windowId: string = `img-${Date.now()}`
 ): Promise<string> => {
-    const storageInstance = getStorageInstance();
 
-    if (!storageInstance) {
-        console.warn('[AuraStorage] Storage not available, returning original URL');
-        return sourceUrl;
-    }
+    // Check if valid URL
+    if (!sourceUrl) return '';
+    if (isFirebaseStorageUrl(sourceUrl)) return sourceUrl;
 
     try {
-        // Fetch the image
-        const response = await fetch(sourceUrl);
+        const apiUrl = import.meta.env.VITE_SAGA_API_URL || 'http://localhost:8001';
+        const proxyEndpoint = `${apiUrl}/api/storage/upload-from-url`;
+
+        console.log(`[AuraStorage] Proxying upload via: ${proxyEndpoint}`);
+
+        const response = await fetch(proxyEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                source_url: sourceUrl,
+                project_id: projectId,
+                window_id: windowId
+            })
+        });
+
         if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.status}`);
+            const errText = await response.text();
+            throw new Error(`Backend upload failed (${response.status}): ${errText}`);
         }
 
-        const blob = await response.blob();
+        const data = await response.json();
 
-        // Determine file extension from content type
-        const contentType = response.headers.get('content-type') || 'image/jpeg';
-        const extMap: Record<string, string> = {
-            'image/jpeg': 'jpg',
-            'image/png': 'png',
-            'image/gif': 'gif',
-            'image/webp': 'webp'
-        };
-        const ext = extMap[contentType.split(';')[0]] || 'jpg';
+        if (!data.url) {
+            throw new Error("Backend returned no URL");
+        }
 
-        // Upload to Firebase Storage
-        const path = `projects/${projectId}/images/${windowId}.${ext}`;
-        const storageRef = ref(storageInstance, path);
-
-        await uploadBytes(storageRef, blob, { contentType });
-
-        // Get public download URL
-        const downloadUrl = await getDownloadURL(storageRef);
-
-        console.log(`[AuraStorage] Uploaded to: ${downloadUrl}`);
-        return downloadUrl;
+        console.log(`[AuraStorage] Uploaded to: ${data.url}`);
+        return data.url;
 
     } catch (err) {
         console.error('[AuraStorage] Upload failed:', err);
-        // Fall back to original URL
+        // Fall back to original URL so the UI can at least try to display it
         return sourceUrl;
     }
 };

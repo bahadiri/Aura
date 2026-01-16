@@ -1,9 +1,7 @@
 import { AIRManifest } from '../types';
-import { CharactersAIR } from './CharactersAIR';
 
-export const CharactersManifest: AIRManifest = {
+export const CharactersManifest: Omit<AIRManifest, 'component'> = {
     id: 'characters-air',
-    component: CharactersAIR,
     meta: {
         title: 'Characters',
         icon: '👥',

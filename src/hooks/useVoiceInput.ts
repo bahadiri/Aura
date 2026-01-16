@@ -165,6 +165,8 @@ export const useVoiceInput = (language: string = 'en-US') => {
     const speak = useCallback((text: string, voiceURI?: string) => {
         if (!('speechSynthesis' in window)) return;
 
+        console.log(`[Voice] Speaking: "${text.substring(0, 20)}..." using URI:`, voiceURI);
+
         // Stop listening while speaking to avoid feedback
         if (recognitionRef.current && state.isListening) {
             try {
@@ -177,11 +179,26 @@ export const useVoiceInput = (language: string = 'en-US') => {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
 
+        // Fetch voices directly to ensure we have the latest list (bypassing potentially stale state)
+        const currentVoices = window.speechSynthesis.getVoices();
+
         // Find selected voice
-        const selectedVoice = availableVoices.find(v => v.voiceURI === voiceURI);
+        const selectedVoice = currentVoices.find(v => v.voiceURI === voiceURI);
+
+        console.log(`[Voice] Speaking with URI: ${voiceURI}`);
+        console.log(`[Voice] Available voices count: ${currentVoices.length}`);
+
         if (selectedVoice) {
+            console.log("[Voice] Found voice:", selectedVoice.name);
             utterance.voice = selectedVoice;
         } else {
+            console.warn("[Voice] Voice not found for URI, falling back to lang:", language);
+            // Attempt to find ANY voice for the language as a fallback
+            const langVoice = currentVoices.find(v => v.lang.startsWith(language));
+            if (langVoice) {
+                utterance.voice = langVoice;
+                console.log("[Voice] Fallback to first language match:", langVoice.name);
+            }
             utterance.lang = language;
         }
 

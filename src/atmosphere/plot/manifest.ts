@@ -1,9 +1,9 @@
 import { AIRManifest } from '../types';
-import { PlotAIR } from './PlotAIR';
+import { Component } from './index';
 
 export const PlotManifest: AIRManifest = {
     id: 'plot-air',
-    component: PlotAIR,
+    component: Component,
     meta: {
         title: 'Content Details',
         icon: '🎬',

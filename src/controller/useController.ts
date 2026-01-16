@@ -49,11 +49,24 @@ export function useController(initialState?: any) {
         }
 
         // Use explicitly provided ID if available (for Shared Identity/Pop-out)
-        const instanceId = props.instanceId || `${manifestId}-${Date.now()}`;
+        // Special Logic for Singleton AIRs (Note Taker)
+        let actualInstanceId = props.instanceId;
+        if (!actualInstanceId && manifestId === 'note-taker-air') {
+            const existingNoteTaker = windows.find(w => w.manifestId === 'note-taker-air');
+            if (existingNoteTaker) {
+                actualInstanceId = existingNoteTaker.id;
+            }
+        }
+
+        const instanceId = actualInstanceId || `${manifestId}-${Date.now()}`;
 
         // Check if window already exists
         const existing = windows.find(w => w.id === instanceId);
         if (existing) {
+            // Update props if provided (crucial for 'append')
+            if (Object.keys(props).length > 0) {
+                updateWindow(instanceId, { props: { ...existing.props, ...props, updateTs: Date.now() } });
+            }
             focusWindow(instanceId);
             return;
         }

@@ -1,9 +1,7 @@
 import { AIRManifest } from '../types';
-import { ImageAIR } from './ImageAIR';
 
-export const ImageManifest: AIRManifest = {
+export const ImageManifest: Omit<AIRManifest, 'component'> = {
     id: 'image-air',
-    component: ImageAIR,
     meta: {
         title: 'Image Viewer',
         icon: '🖼️',

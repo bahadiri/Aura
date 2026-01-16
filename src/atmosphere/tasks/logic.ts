@@ -1,27 +1,23 @@
 import { useState, useEffect } from 'react';
 import { flux } from '../../flux';
+import { useAura } from '../../sdk'; // Correct SDK import
+import { TaskItem, TasksUIProps } from './ui';
 
-
-export interface TaskItem {
-    id: string | number;
-    label: string;
-    completed: boolean;
-}
-
-export interface TasksAIRProps {
+export interface UseTasksProps {
     initialTasks?: TaskItem[];
     title?: string;
     windowId?: string;
     updateWindow?: (data: any) => void;
 }
 
-export const useTasks = (props: TasksAIRProps) => {
+export const useTasksLogic = (props: UseTasksProps) => {
+    const { proxy, llm } = useAura(); // Access SDK capabilities
     const { initialTasks = [], title = "TASKS", windowId, updateWindow } = props;
     const [tasks, setTasks] = useState<TaskItem[]>(initialTasks);
 
-    // Sync from props if they change (e.g. Chat adds a task)
+    // Sync from props
     useEffect(() => {
-        if (props.initialTasks) {
+        if (props.initialTasks && Array.isArray(props.initialTasks)) {
             setTasks(props.initialTasks);
         }
     }, [props.initialTasks]);
@@ -31,7 +27,6 @@ export const useTasks = (props: TasksAIRProps) => {
             updateWindow({ props: { ...props, initialTasks: newTasks } });
         }
     };
-
 
     const toggleTask = (id: string | number) => {
         const newTasks = tasks.map(t => {
@@ -46,7 +41,7 @@ export const useTasks = (props: TasksAIRProps) => {
                             taskLabel: t.label,
                             windowId
                         },
-                        to: 'controller'
+                        to: 'all'
                     });
                 }
                 return updated;
@@ -57,9 +52,34 @@ export const useTasks = (props: TasksAIRProps) => {
         persist(newTasks);
     };
 
+    const addTask = (label: string) => {
+        const newTask: TaskItem = {
+            id: crypto.randomUUID(),
+            label,
+            completed: false
+        };
+        const newTasks = [...tasks, newTask];
+        setTasks(newTasks);
+        persist(newTasks);
+    };
+
+    // Listen for Chat Commands
+    useEffect(() => {
+        const unsubscribe = flux.subscribe((msg: any) => {
+            if (msg.type === 'ADD_TASK' && (msg.to === 'all' || msg.to === 'tasks-air')) {
+                const label = msg.payload.label || msg.payload.task;
+                if (label) {
+                    addTask(label);
+                }
+            }
+        });
+        return unsubscribe;
+    }, [tasks]);
+
     return {
         tasks,
         title,
-        toggleTask
+        toggleTask,
+        addTask
     };
 };

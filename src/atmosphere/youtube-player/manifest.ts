@@ -1,9 +1,7 @@
 import { AIRManifest } from '../types';
-import { YoutubePlayerAIR } from './YoutubePlayerAIR';
 
-export const YoutubePlayerManifest: AIRManifest = {
+export const YoutubePlayerManifest: Omit<AIRManifest, 'component'> = {
     id: 'youtube-player-air',
-    component: YoutubePlayerAIR,
     meta: {
         title: 'YouTube Player',
         icon: '▶️',

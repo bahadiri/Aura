@@ -1,9 +1,7 @@
 import { AIRManifest } from '../types';
-import { TasksAIR } from './TasksAIR';
 
-export const TasksManifest: AIRManifest = {
+export const TasksManifest: Omit<AIRManifest, 'component'> = {
     id: 'tasks-air',
-    component: TasksAIR,
     meta: {
         title: 'Task Manager',
         icon: '✅',

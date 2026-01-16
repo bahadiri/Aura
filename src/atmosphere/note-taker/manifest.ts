@@ -1,9 +1,7 @@
 import { AIRManifest } from '../types';
-import { NoteTakerAIR } from './NoteTakerAIR';
 
-export const NoteTakerManifest: AIRManifest = {
+export const NoteTakerManifest: Omit<AIRManifest, 'component'> = {
     id: 'note-taker-air',
-    component: NoteTakerAIR,
     meta: {
         title: 'Notes',
         icon: '📝',

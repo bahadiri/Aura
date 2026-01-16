@@ -1,10 +1,10 @@
 import React from 'react';
-import styles from '../../styles/aur.module.css';
+import styles from '../../../styles/aur.module.css';
 
-interface ViewProps {
+export interface NoteTakerUIProps {
     value: string;
     setValue: (val: string) => void;
-    placeholder: string;
+    placeholder?: string;
     title?: string;
     isPolishing?: boolean;
     isGeneratingTitle?: boolean;
@@ -12,10 +12,10 @@ interface ViewProps {
     onDownload?: () => void;
 }
 
-export const View: React.FC<ViewProps> = ({
+const NoteTakerUI: React.FC<NoteTakerUIProps> = ({
     value,
     setValue,
-    placeholder,
+    placeholder = "Start typing...",
     title,
     isPolishing = false,
     isGeneratingTitle = false,
@@ -23,13 +23,13 @@ export const View: React.FC<ViewProps> = ({
     onDownload
 }) => {
     return (
-        <div className={styles.screenContent} style={{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className={styles.screenContent} style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
             {/* Title Header */}
             {title && (
                 <div style={{
                     padding: '12px 20px',
-                    borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    background: 'rgba(0,0,0,0.1)',
+                    borderBottom: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-secondary)',
                     fontWeight: 600,
                     fontSize: '1.1rem',
                     color: 'var(--text-primary)',
@@ -39,7 +39,7 @@ export const View: React.FC<ViewProps> = ({
                 }}>
                     📝 {title}
                     {isGeneratingTitle && (
-                        <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>...</span>
+                        <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>Generating title...</span>
                     )}
                 </div>
             )}
@@ -47,17 +47,17 @@ export const View: React.FC<ViewProps> = ({
             {/* Toolbar */}
             <div style={{
                 padding: '8px 12px',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                borderBottom: '1px solid var(--border-subtle)',
                 display: 'flex',
                 gap: '8px',
                 justifyContent: 'flex-end',
-                background: 'rgba(0,0,0,0.2)',
+                background: 'var(--bg-secondary)',
                 flexShrink: 0
             }}>
                 <button
                     className={styles.actionButton}
                     onClick={onPolish}
-                    disabled={isPolishing}
+                    disabled={isPolishing || !value.trim()}
                     style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}
                     title="Polish with Gemini"
                 >
@@ -86,9 +86,13 @@ export const View: React.FC<ViewProps> = ({
                     padding: '30px',
                     lineHeight: '1.8',
                     fontSize: '1rem',
-                    fontFamily: 'inherit'
+                    fontFamily: 'inherit',
+                    background: 'transparent',
+                    color: 'var(--text-primary)'
                 }}
             />
         </div>
     );
 };
+
+export default NoteTakerUI;
