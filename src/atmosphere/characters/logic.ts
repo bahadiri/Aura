@@ -23,12 +23,9 @@ export const useCharactersLogic = ({
     const [error, setError] = useState('');
     const [fetchedTitle, setFetchedTitle] = useState(title || 'Characters');
 
-    useEffect(() => {
-        // Initial sync
-        if (initialCharacters.length > 0) {
-            setCharacters(initialCharacters);
-        }
-    }, [initialCharacters]);
+    // Initial sync removed to avoid prop/state conflicts. 
+    // We rely on useState initialization for the "uncontrolled" part of the pattern.
+
 
     // Search Logic
     useEffect(() => {
@@ -38,6 +35,24 @@ export const useCharactersLogic = ({
             performSearch(query!);
         }
     }, [query]); // Dependencies: only query. If query changes, we search.
+
+    // Persistence Effect
+    useEffect(() => {
+        if (updateWindow) {
+            const timeoutId = setTimeout(() => {
+                updateWindow({
+                    props: {
+                        characters,
+                        title: fetchedTitle, // Use current state title
+                        query, // Persist query
+                        // We do NOT persist isLoading or error typically, as we want to restore "content"
+                    }
+                });
+            }, 1000); // Debounce updates
+            return () => clearTimeout(timeoutId);
+        }
+    }, [characters, fetchedTitle, query, updateWindow]);
+
 
     const performSearch = async (q: string) => {
         setIsLoading(true);
@@ -119,17 +134,8 @@ export const useCharactersLogic = ({
                 // We'll use the LLM to get descriptions and traits
                 enrichCharacters(mapped, newTitle, q);
 
-                // Persist only after successful fetch
-                if (updateWindow) {
-                    console.log("[CharactersAIR] Persisting characters...");
-                    updateWindow({
-                        props: {
-                            characters: mapped,
-                            title: newTitle,
-                            query // Persist query so we know what spawned it
-                        }
-                    });
-                }
+                // Persist only after successful fetch (handled by effect now)
+
             } else {
                 setError("No cast information found.");
             }
@@ -164,17 +170,8 @@ export const useCharactersLogic = ({
                         }
                     });
 
-                    // Persist enriched data
-                    if (updateWindow) {
-                        console.log("[CharactersAIR] Persisting enriched characters...");
-                        updateWindow({
-                            props: {
-                                characters: next,
-                                title: mediaTitle,
-                                query: originalQuery
-                            }
-                        });
-                    }
+                    // Persist enriched data (handled by effect now)
+
 
                     return next;
                 });
