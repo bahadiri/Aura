@@ -26,14 +26,14 @@ In this scenario, we want to show how a user's request propagates through Flux u
 ```mermaid
 sequenceDiagram
     participant User
-    participant Brainstorm as Brainstorm AIR
+    participant Chat as Chat Interface
     participant Flux as Flux
     participant Controller as Controller
     participant Space as The Space
     participant Weather as Weather AIR
 
-    User->>Brainstorm: "What's the weather in London?"
-    Brainstorm->>Flux: Emits HU { type: "INTENT_WEATHER", data: "London" }
+    User->>Chat: "What's the weather in London?"
+    Chat->>Flux: Emits HU { type: "INTENT_WEATHER", data: "London" }
     Flux->>Controller: Broadcasts HU
     Note over Controller: Analyzes HU &<br/>Checks Atmosphere
     Controller->>Space: Spawns 'weather-aur'
@@ -42,8 +42,8 @@ sequenceDiagram
 ```
 
 ### The Flow
-1.  **User Request**: User chats with the Brainstorm AIR: *"What's the weather in London?"*
-2.  **HU Emission**: The Brainstorm AIR processes this and emits a Holographic Update (HU) to the Flux.
+1.  **User Request**: User chats via the **Chat Interface**: *"What's the weather in London?"*
+2.  **HU Emission**: The Chat logic processes this and emits a Holographic Update (HU) to the Flux.
     ```typescript
     flux.dispatch({
         to: 'controller', // Targeted to the System Core

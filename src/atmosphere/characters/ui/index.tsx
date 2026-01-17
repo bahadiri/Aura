@@ -48,94 +48,89 @@ const CharactersUI: React.FC<CharactersUIProps> = ({
             )}
 
             <div className={styles.scrollArea}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 15, padding: '0 5px' }}>
-                    {characters.map(char => (
-                        <div
-                            key={char.id}
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                borderRadius: 16,
-                                padding: 16,
-                                border: '1px solid var(--border-subtle)',
-                                display: 'flex',
-                                flexDirection: 'row',
-                                gap: 20,
-                                alignItems: 'flex-start',
-                                transition: 'all 0.2s',
-                                minHeight: 120
-                            }}
-                        >
-                            {/* Left Column: Image & Basic Info */}
-                            <div style={{ flex: '0 0 180px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                                    {/* Avatar Image */}
-                                    <div style={{
-                                        width: 60,
-                                        height: 60,
-                                        borderRadius: '50%',
-                                        overflow: 'hidden',
-                                        flexShrink: 0,
-                                        background: 'var(--bg-tertiary)',
-                                        border: '1px solid var(--border-subtle)'
-                                    }}>
-                                        {char.imageUrl ? (
-                                            <img src={char.imageUrl} alt={char.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>
-                                                {char.name.charAt(0)}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Name & Actor */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                                        <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{char.name}</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--accent-primary)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{char.role}</div>
-                                    </div>
-                                </div>
-
-                                {/* Tags */}
-                                {char.traits && char.traits.length > 0 && (
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                        {char.traits.slice(0, 3).map((t, i) => ( // Showing top 3 tags
-                                            <span key={`${t}-${i}`} style={{
-                                                fontSize: '0.65rem',
-                                                padding: '3px 8px',
-                                                background: 'var(--bg-highlight)',
-                                                borderRadius: 12,
-                                                color: 'var(--text-secondary)',
-                                                border: '1px solid var(--border-subtle)'
-                                            }}>
-                                                {t}
-                                            </span>
-                                        ))}
+                {characters.map(char => (
+                    <div
+                        key={char.id}
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            borderRadius: 16,
+                            padding: 16,
+                            border: '1px solid var(--border-subtle)',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            gap: 20,
+                            alignItems: 'flex-start',
+                            transition: 'all 0.2s',
+                            minHeight: 120
+                        }}
+                    >
+                        {/* Avatar Column */}
+                        <div style={{ flexShrink: 0 }}>
+                            <div style={{
+                                width: 60,
+                                height: 60,
+                                borderRadius: '50%',
+                                overflow: 'hidden',
+                                background: 'var(--bg-tertiary)',
+                                border: '1px solid var(--border-subtle)'
+                            }}>
+                                {char.imageUrl ? (
+                                    <img src={char.imageUrl} alt={char.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>
+                                        {char.name.charAt(0)}
                                     </div>
                                 )}
                             </div>
+                        </div>
 
-                            {/* Right Column: Description */}
+                        {/* Content Column */}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)' }}>{char.name}</div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', fontWeight: 500 }}>{char.role}</div>
+                            </div>
+
+                            {/* Description */}
                             <div style={{
-                                flex: 1,
                                 fontSize: '0.9rem',
-                                lineHeight: '1.6',
+                                lineHeight: '1.5',
                                 color: 'var(--text-primary)',
                                 opacity: 0.9,
-                                borderLeft: '1px solid var(--border-subtle)',
-                                paddingLeft: 20,
-                                display: 'flex',
-                                alignItems: 'center'
+                                whiteSpace: 'normal',
+                                marginTop: 4
                             }}>
                                 {char.description ? (
                                     <span>{char.description}</span>
                                 ) : (
-                                    <span style={{ fontStyle: 'italic', opacity: 0.5, color: 'var(--text-secondary)' }}>
-                                        Analyzing character...
+                                    <span style={{ fontStyle: 'italic', opacity: 0.5, color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                                        Analyzing...
                                     </span>
                                 )}
                             </div>
+
+                            {/* Tags */}
+                            {char.traits && char.traits.length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                                    {char.traits.map((t, i) => (
+                                        <span key={`${t}-${i}`} style={{
+                                            fontSize: '0.75rem',
+                                            padding: '3px 8px',
+                                            background: 'var(--bg-highlight)',
+                                            borderRadius: 12,
+                                            color: 'var(--text-secondary)',
+                                            border: '1px solid var(--border-subtle)'
+                                        }}>
+                                            {t}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    ))}
-                </div>
+                    </div>
+                ))}
+                {/* Add spacer at bottom for scrolling */}
+                <div style={{ height: 20 }}></div>
             </div>
         </div>
     );

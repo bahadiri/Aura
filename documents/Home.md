@@ -19,7 +19,7 @@ Aura is built on three pillars:
 
 ## Use Cases
 
--   **Creative Workflows**: A [[Brainstorm AIR|Standard AIRs#brainstorm]] can spawn an [[Image AIR|Standard AIRs#image]] to visualize ideas.
+-   **Creative Workflows**: The **Chat Interface** can spawn an [[Image AIR|Standard AIRs#image]] to visualize ideas or a [[YouTube Player AIR|Standard AIRs#youtube]] to find references.
 -   **Data Analysis**: A [[Query AIR|Standard AIRs#query]] can broadcast a selected dataset via [[Flux]].
 -   **Complex Dashboards**: Build mission-control style interfaces where every panel is aware of the others context.
 

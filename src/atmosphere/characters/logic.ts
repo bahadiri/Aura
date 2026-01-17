@@ -166,7 +166,12 @@ export const useCharactersLogic = ({
                     const next = [...prev];
                     enrichedData.forEach((data: any, i: number) => {
                         if (next[i]) {
-                            next[i] = { ...next[i], ...data };
+                            // Explicitly map only expected fields to avoid overwriting id, name, or role
+                            next[i] = {
+                                ...next[i],
+                                description: data.description,
+                                traits: data.traits
+                            };
                         }
                     });
 

@@ -1,6 +1,7 @@
 
 - **Start Here**
   - [Home](Home)
+  - [Integrating Aura](Integrating-Aura)
   - [System Overview](Home#core-philosophy)
 
 - **Technical Reference**

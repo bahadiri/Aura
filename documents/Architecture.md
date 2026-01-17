@@ -4,13 +4,15 @@
 
 # 🏗️ Aura Architecture
 
+For a high-level view of how Aura integrates with the Saga project and Atmosphere, see [[Integrating Aura]].
+
 This document details the technical architecture of the Aura system, focusing on the interactions between the Registry, the Context (**"The Space"**), and the individual AIRs.
 
 ## System Diagram
 
 ```mermaid
 graph TD
-    User((User)) -->|Interacts| AUR1[Brainstorm AIR]
+    User((User)) -->|Interacts| Chat[Chat Interface]
     
     Controller[Controller]
     Flux[Flux]
@@ -19,15 +21,15 @@ graph TD
     Controller ==>|Updates| Space
 
     subgraph Space ["The Space"]
-        AUR1
+        AUR1[Youtube AIR]
         AUR2[Image AIR]
         AUR3[Custom AIR]
     end
 
-    AUR1 -->|"HU"| Flux
+    Chat -->|"HU"| Flux
     Flux -.->|"HU"| AUR2
     Flux -.->|"HU"| AUR3
-    Flux -.->|"HU"| AUR1
+    Flux -.->|"HU"| Chat
 ```
 
 ## The Controller
