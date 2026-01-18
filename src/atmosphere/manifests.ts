@@ -16,13 +16,17 @@ import { Component as PlotComponent } from './plot';
 import { CharactersManifest } from './characters/manifest';
 import { Component as CharactersComponent } from './characters';
 
+import { PomodoroManifest } from './pomodoro/manifest';
+import { PomodoroAIR } from './pomodoro';
+
 export const manifests = [
     { ...ImageManifest, component: ImageComponent },
     { ...NoteTakerManifest, component: NoteTakerComponent },
     { ...YoutubePlayerManifest, component: YoutubePlayerComponent },
     { ...TasksManifest, component: TasksComponent },
     { ...PlotManifest, component: PlotComponent },
-    { ...CharactersManifest, component: CharactersComponent }
+    { ...CharactersManifest, component: CharactersComponent },
+    { ...PomodoroManifest, component: PomodoroAIR.component }
 ];
 
 

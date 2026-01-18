@@ -50,4 +50,5 @@ export interface IAuraCapabilities {
 export interface IAuraConfig {
     llmGatewayUrl: string;
     proxyUrl: string;
+    storage: import('../storage/config').AuraStorageConfig;
 }

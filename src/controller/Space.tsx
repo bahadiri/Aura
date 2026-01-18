@@ -4,6 +4,7 @@ import { atmosphere } from '../atmosphere';
 import { Rnd } from 'react-rnd';
 import { flux } from '../flux';
 import { FluxMessage } from '../flux/types';
+import { getStorage } from '../storage';
 
 interface SpaceProps {
     projectId?: string;
@@ -37,28 +38,19 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
             }
             setLoading(true);
             try {
-                const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-                const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
-                const token = (window as any).sagaToken;
+                // Use new Aura Storage Abstraction
+                const storage = getStorage();
+                const data = await storage.documents.get<Project>('projects', projectId);
 
-                const headers: any = {};
-                if (token) headers['Authorization'] = `Bearer ${token}`;
-
-                console.log(`[Space] Fetching project ${projectId}, hasToken: ${!!token}`);
-
-                const res = await fetch(`${baseUrl}/api/projects/${projectId}`, { headers });
-                console.log(`[Space] Fetch response: ${res.status}`);
-                if (res.ok) {
-                    const data = await res.json();
+                if (data) {
                     setProject(data);
-                    console.log("[Space] Project loaded:", data.name);
+                    console.log("[Space] Project loaded via AuraStorage:", data.name);
                     if (data.state) {
                         loadState(data.state);
                     }
                     initializedRef.current = true;
                 } else {
-                    const errorText = await res.text();
-                    console.error(`[Space] Failed to load project: ${res.status}`, errorText);
+                    console.error(`[Space] Project not found: ${projectId}`);
                 }
             } catch (err) {
                 console.error("[Space] Failed to load project", err);
@@ -114,25 +106,13 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
         setSaving(true);
+        setSaving(true);
         saveTimeoutRef.current = setTimeout(async () => {
             try {
-                const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-                const token = (window as any).sagaToken;
-                if (!token) return;
-
-                const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
-                const res = await fetch(`${baseUrl}/api/projects/${projectId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ state: fullState })
-                });
-
-                if (res.ok) {
-                    lastSavedState.current = stateString;
-                }
+                const storage = getStorage();
+                // We update with Partial<Project>
+                await storage.documents.update('projects', projectId, { state: fullState });
+                lastSavedState.current = stateString;
             } catch (err) {
                 console.error("[Space] Auto-save failed", err);
             } finally {
@@ -203,17 +183,11 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
 
         setProject({ ...project, name: newName });
         try {
-            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-            const token = (window as any).sagaToken;
-            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
-            await fetch(`${baseUrl}/api/projects/${projectId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ name: newName })
-            });
+            setProject({ ...project, name: newName });
+            try {
+                const storage = getStorage();
+                await storage.documents.update('projects', projectId, { name: newName });
+            } catch (err) { console.error(err); }
         } catch (err) { console.error(err); }
     };
 

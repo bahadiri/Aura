@@ -13,3 +13,6 @@
 - **Guides**
   - [Developer Guide](Developer-Guide)
   - [Creating AIRs](Developer-Guide#step-1-create-the-component)
+
+- **Learnings**
+  - [Notes & Insights](Learnings)

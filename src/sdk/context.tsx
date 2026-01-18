@@ -10,7 +10,14 @@ interface AuraProviderProps {
     children: React.ReactNode;
 }
 
+import { createStorage } from '../storage';
+
 export const AuraProvider: React.FC<AuraProviderProps> = ({ config, children }) => {
+    // Initialize storage singleton (Required)
+    useMemo(() => {
+        createStorage(config.storage);
+    }, [config.storage]);
+
     const capabilities = useMemo(() => {
         return {
             llm: new LiteLLMClient(config.llmGatewayUrl),
