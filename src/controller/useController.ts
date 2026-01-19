@@ -145,11 +145,14 @@ export function useController(initialState?: any) {
     };
 
     const serialize = () => {
-        return {
+        // Sanitize state to remove functions (Firestore doesn't support them)
+        const rawState = {
             windows,
             topZ,
             language
         };
+        // JSON roundtrip strips functions, undefined, symbols, etc.
+        return JSON.parse(JSON.stringify(rawState));
     };
 
     const loadState = (state: any) => {

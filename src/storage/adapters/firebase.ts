@@ -129,14 +129,19 @@ export class FirebaseObjectAdapter implements IObjectStorage {
 
         let blob: Blob;
         if (typeof content === 'string') {
-            // Basic string to blob - likely requires more robust handling (Base64 etc)
-            // For now assume plain text or implement specific string handlers
             blob = new Blob([content], { type: 'text/plain' });
         } else {
             blob = content;
         }
 
         await uploadBytes(storageRef, blob);
+        return path;
+    }
+
+    async putFromBlob(path: string, blob: Blob, contentType?: string): Promise<string> {
+        const storageRef = ref(storage, path);
+        const metadata = contentType ? { contentType } : undefined;
+        await uploadBytes(storageRef, blob, metadata);
         return path;
     }
 

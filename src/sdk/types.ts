@@ -48,7 +48,7 @@ export interface IAuraCapabilities {
 }
 
 export interface IAuraConfig {
-    llmGatewayUrl: string;
-    proxyUrl: string;
+    llm: import('../storage/config').ILLMConfig; // We need to define this or reuse existing
     storage: import('../storage/config').AuraStorageConfig;
+    resources?: Record<string, any>; // Resource Registry Overrides
 }

@@ -12,6 +12,11 @@ export interface DriverConfig {
     emulator?: StorageEmulatorConfig;
 }
 
+export interface ILLMConfig {
+    gatewayUrl: string;
+    proxyUrl: string;
+}
+
 export interface AuraStorageConfig {
     documents: DriverConfig;
     objects: DriverConfig;

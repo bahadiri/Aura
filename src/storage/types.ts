@@ -20,6 +20,7 @@ export interface IObjectStorage {
      * Returns the path or identifier.
      */
     put(path: string, content: Blob | File | string): Promise<string>;
+    putFromBlob(path: string, blob: Blob, contentType?: string): Promise<string>;
 
     /**
      * Retrieve the object content usually as a Blob/File.

@@ -91,6 +91,10 @@ export class FileSystemObjectAdapter implements IObjectStorage {
         return path;
     }
 
+    async putFromBlob(path: string, blob: Blob, contentType?: string): Promise<string> {
+        return this.put(path, blob);
+    }
+
     async get(path: string): Promise<Blob | null> {
         const key = this.getObjectKey(path);
         const val = await get(key);

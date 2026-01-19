@@ -7,23 +7,25 @@ const AuraContext = createContext<IAuraCapabilities | null>(null);
 
 interface AuraProviderProps {
     config: IAuraConfig;
+    localAirs?: any[]; // The Local Atmosphere (Manifests)
     children: React.ReactNode;
 }
 
 import { createStorage } from '../storage';
 
-export const AuraProvider: React.FC<AuraProviderProps> = ({ config, children }) => {
+export const AuraProvider: React.FC<AuraProviderProps> = ({ config, localAirs, children }) => {
     // Initialize storage singleton (Required)
     useMemo(() => {
         createStorage(config.storage);
     }, [config.storage]);
 
     const capabilities = useMemo(() => {
+        // TODO: Pass resources to clients if needed
         return {
-            llm: new LiteLLMClient(config.llmGatewayUrl),
-            proxy: new GenericProxyClient(config.proxyUrl)
+            llm: new LiteLLMClient(config.llm.gatewayUrl), // Updated path
+            proxy: new GenericProxyClient(config.llm.proxyUrl) // Updated path
         };
-    }, [config.llmGatewayUrl, config.proxyUrl]);
+    }, [config]);
 
     return (
         <AuraContext.Provider value={capabilities}>

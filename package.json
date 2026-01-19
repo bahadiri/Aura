@@ -3,6 +3,16 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
+    "main": "src/index.ts",
+    "exports": {
+        ".": "./src/index.ts",
+        "./sdk": "./src/sdk/index.ts",
+        "./controller/*": "./src/controller/*",
+        "./storage/*": "./src/storage/*",
+        "./atmosphere/*": "./src/atmosphere/*",
+        "./hooks/*": "./src/hooks/*",
+        "./flux/*": "./src/flux/*"
+    },
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
@@ -10,11 +20,13 @@
         "test": "vitest run"
     },
     "dependencies": {
-        "firebase": "^10.7.1",
         "idb-keyval": "^6.2.2",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
         "react-rnd": "^10.4.1"
+    },
+    "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0",
+        "firebase": ">=10.0.0"
     },
     "devDependencies": {
         "@playwright/test": "^1.57.0",
