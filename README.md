@@ -6,29 +6,11 @@ Aura rethinks the traditional desktop interface by replacing static windows with
 
 ![Aura Vision](assets/vision.png)
 
-## Architecture
+## Screenshots
 
-```mermaid
-graph TD
-    User((User)) -->|Interacts| Client[Aura Client]
-    
-    subgraph Client ["Aura (Browser/Desktop)"]
-        Space[The Space]
-        Flux[Flux Bus]
-        
-        subgraph AIRs ["AIRs (Agents)"]
-            ChatAIR
-            ImageAIR
-            CustomAIR
-        end
-        
-        Space -- Manage --> AIRs
-        AIRs -- Broadcast --> Flux
-        Flux -- Subscribe --> AIRs
-    end
-    
-    Client -->|Syncs| Cloud[Persistence Layer]
-```
+| | |
+|:---:|:---:|
+| ![Cool!](assets/Cool!.PNG) | ![Psychologist AIR](assets/psychologist.jpg) |
 
 ## Documentation
 
