@@ -8,6 +8,7 @@ import { getStorage } from '../storage';
 
 interface SpaceProps {
     projectId?: string;
+    onError?: (error: Error) => void;
 }
 
 interface Project {
@@ -19,7 +20,7 @@ interface Project {
     updated_at: string;
 }
 
-export const Space: React.FC<SpaceProps> = ({ projectId }) => {
+export const Space: React.FC<SpaceProps> = ({ projectId, onError }) => {
     const [project, setProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(!!projectId);
     const [saving, setSaving] = useState(false);
@@ -47,13 +48,24 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
                     console.log("[Space] Project loaded via AuraStorage:", data.name);
                     if (data.state) {
                         loadState(data.state);
+                        // Restore Chat State if available
+                        if (data.state.chat) {
+                            flux.dispatch({
+                                type: 'SYNC_CHAT_STATE',
+                                payload: data.state.chat,
+                                to: 'all' // Flux store should pick this up
+                            });
+                        }
                     }
                     initializedRef.current = true;
                 } else {
-                    console.error(`[Space] Project not found: ${projectId}`);
+                    const err = new Error(`Project not found: ${projectId}`);
+                    console.error(`[Space] ${err.message}`);
+                    if (onError) onError(err);
                 }
             } catch (err) {
                 console.error("[Space] Failed to load project", err);
+                if (onError) onError(err instanceof Error ? err : new Error(String(err)));
                 initializedRef.current = true;
             } finally {
                 setLoading(false);
@@ -94,10 +106,13 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
         }
 
         const controllerState = serializeRef.current();
-        const fullState = {
+        // Merge chat state and then sanitize to remove functions/non-serializable data
+        const rawState = {
             ...controllerState,
             chat: chatStateRef.current
         };
+        // JSON roundtrip strips functions, undefined, symbols, etc. (Firestore compat)
+        const fullState = JSON.parse(JSON.stringify(rawState));
         const stateString = JSON.stringify(fullState);
 
         if (stateString === lastSavedState.current) return;
@@ -105,7 +120,6 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
         console.debug("[Space] State changed, scheduling auto-save...");
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
-        setSaving(true);
         setSaving(true);
         saveTimeoutRef.current = setTimeout(async () => {
             try {
@@ -118,7 +132,7 @@ export const Space: React.FC<SpaceProps> = ({ projectId }) => {
             } finally {
                 setSaving(false);
             }
-        }, 2000);
+        }, 1000);
 
         return () => {
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);

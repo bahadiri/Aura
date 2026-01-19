@@ -1,3 +1,5 @@
+const getApiUrl = () => import.meta.env.VITE_SAGA_API_URL || 'http://localhost:8001';
+
 export const resources = {
     api: {
         google: {
@@ -15,10 +17,12 @@ export const resources = {
             image: {
                 id: 'tmdb-image-search',
                 provider: 'proxy',
-                config: {
-                    url: 'http://127.0.0.1:8001/api/search/image',
-                    method: 'GET',
-                    auth: 'NONE'
+                get config() {
+                    return {
+                        url: `${getApiUrl()}/api/search/image`,
+                        method: 'GET',
+                        auth: 'NONE'
+                    };
                 }
             }
         }
