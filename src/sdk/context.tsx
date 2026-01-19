@@ -7,13 +7,13 @@ const AuraContext = createContext<IAuraCapabilities | null>(null);
 
 interface AuraProviderProps {
     config: IAuraConfig;
-    localAirs?: any[]; // The Local Atmosphere (Manifests)
+    ambience?: any[]; // Local AIRs stored locally for the project
     children: React.ReactNode;
 }
 
 import { createStorage } from '../storage';
 
-export const AuraProvider: React.FC<AuraProviderProps> = ({ config, localAirs, children }) => {
+export const AuraProvider: React.FC<AuraProviderProps> = ({ config, ambience, children }) => {
     // Initialize storage singleton (Required)
     useMemo(() => {
         createStorage(config.storage);
