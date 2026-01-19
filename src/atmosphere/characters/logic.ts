@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAura } from '../../sdk';
 import { resources } from './resources';
 import { Character } from './ui'; // Import type from UI
+import { enrichCharactersPrompt } from './prompts';
 
 export interface UseCharactersProps {
     characters?: Character[];
@@ -109,13 +110,14 @@ export const useCharactersLogic = ({
             setFetchedTitle(newTitle);
 
             // 2. Fetch Credits
-            let creditsData;
-            if (mediaType === 'movie') {
-                // ProxyClient handles {id} replacement in URL if params has 'id'
-                creditsData = await proxy.fetch(resources.api.tmdb.credits.config, { params: { id: mediaId } });
-            } else {
-                creditsData = await proxy.fetch(resources.api.tmdb.creditsTV.config, { params: { id: mediaId } });
-            }
+            let creditsConfig = mediaType === 'movie' 
+                ? { ...resources.api.tmdb.credits.config } 
+                : { ...resources.api.tmdb.creditsTV.config };
+
+            // Manually replace {id} as proxy doesn't handle templates
+            creditsConfig.url = creditsConfig.url.replace('{id}', String(mediaId));
+
+            const creditsData = await proxy.fetch(creditsConfig, { params: {} });
 
             if (creditsData && creditsData.cast) {
                 // Map to Character interface
@@ -151,7 +153,7 @@ export const useCharactersLogic = ({
     const enrichCharacters = async (chars: Character[], mediaTitle: string, originalQuery?: string) => {
         try {
             const charNames = chars.map(c => c.name).join(", ");
-            const prompt = `For the movie/show "${mediaTitle}", provide details for: ${charNames}. Return a JSON array matching the order, where each item has: "description" (short 1-sentence bio) and "traits" (array of 3 short adjectives).`;
+            const prompt = enrichCharactersPrompt(mediaTitle, charNames);
 
             const response = await llm.invoke(resources.api.llm.enrich, {
                 messages: [{ role: 'user', content: prompt }]

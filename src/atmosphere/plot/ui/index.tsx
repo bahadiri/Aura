@@ -86,7 +86,7 @@ const PlotAIR: React.FC<any> = (props) => {
                                         <span style={{ marginLeft: 8, color: 'var(--text-primary)' }}>{ep.title}</span>
                                     </div>
                                     <button
-                                        onClick={() => console.log('Expand summary not fully ported yet')}
+                                        onClick={() => { }}
                                         className={styles.actionButton}
                                         style={{ fontSize: '0.75rem', padding: '4px 10px', marginTop: 0, background: 'var(--bg-highlight)' }}
                                     >

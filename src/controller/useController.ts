@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAura } from '../sdk';
 import { atmosphere } from '../atmosphere/index.js';
 import { flux } from '../flux/index.js';
 import { FluxMessage } from '../flux/types.js';
@@ -9,6 +10,7 @@ export function useController(initialState?: any) {
     const [windows, setWindows] = useState<WindowState[]>([]);
     const [topZ, setTopZ] = useState(1);
     const [language, setLanguage] = useState<string>('en'); // Default language
+    const { apiUrl } = useAura();
 
     // Hydrate state on mount if provided
     useEffect(() => {
@@ -175,9 +177,8 @@ export function useController(initialState?: any) {
         }));
 
         try {
-            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
-            const res = await fetch(`${baseUrl}/api/chat/reflect`, {
+            if (!apiUrl) throw new Error("Aura API URL not configured");
+            const res = await fetch(`${apiUrl}/api/chat/reflect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message, messages, available_airs, open_airs: openAIRs })

@@ -5,23 +5,17 @@ import { Rnd } from 'react-rnd';
 import { flux } from '../flux';
 import { FluxMessage } from '../flux/types';
 import { getStorage } from '../storage';
+import { AuraProject, useAura } from '../sdk';
 
 interface SpaceProps {
     projectId?: string;
+    userId?: string; // Current user ID for permission checks
     onError?: (error: Error) => void;
 }
 
-interface Project {
-    id: string;
-    name: string;
-    state: any;
-    user_id: string;
-    is_public?: boolean;
-    updated_at: string;
-}
-
-export const Space: React.FC<SpaceProps> = ({ projectId, onError }) => {
-    const [project, setProject] = useState<Project | null>(null);
+export const Space: React.FC<SpaceProps> = ({ projectId, userId, onError }) => {
+    const [project, setProject] = useState<AuraProject | null>(null);
+    const { apiUrl } = useAura();
     const [loading, setLoading] = useState(!!projectId);
     const [saving, setSaving] = useState(false);
     const initializedRef = useRef(false);
@@ -41,7 +35,7 @@ export const Space: React.FC<SpaceProps> = ({ projectId, onError }) => {
             try {
                 // Use new Aura Storage Abstraction
                 const storage = getStorage();
-                const data = await storage.documents.get<Project>('projects', projectId);
+                const data = await storage.documents.get<AuraProject>('projects', projectId);
 
                 if (data) {
                     setProject(data);
@@ -99,8 +93,8 @@ export const Space: React.FC<SpaceProps> = ({ projectId, onError }) => {
         if (!projectId || loading || !project) return;
 
         // Ownership Check: Only auto-save if current user is owner
-        const currentUserId = (window as any).sagaUserId;
-        if (project.user_id !== currentUserId) {
+        // Ownership Check: Only auto-save if current user is owner
+        if (userId && project.user_id !== userId) {
             console.debug("[Space] Read-only mode: Not saving changes.");
             return;
         }
@@ -146,10 +140,9 @@ export const Space: React.FC<SpaceProps> = ({ projectId, onError }) => {
 
     const generateTitle = async () => {
         try {
-            const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-            const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
+            if (!apiUrl) return;
             console.log(`[Space] Generating title from ${accumulatedPrompts.current.length} prompts`);
-            const res = await fetch(`${baseUrl}/api/generate-project-title`, {
+            const res = await fetch(`${apiUrl}/api/generate-project-title`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompts: accumulatedPrompts.current })
@@ -192,8 +185,7 @@ export const Space: React.FC<SpaceProps> = ({ projectId, onError }) => {
 
     const handleRename = async (newName: string) => {
         if (!project || !projectId) return;
-        const currentUserId = (window as any).sagaUserId;
-        if (project.user_id !== currentUserId) return;
+        if (userId && project.user_id !== userId) return;
 
         setProject({ ...project, name: newName });
         try {

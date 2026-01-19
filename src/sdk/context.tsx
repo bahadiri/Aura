@@ -23,7 +23,8 @@ export const AuraProvider: React.FC<AuraProviderProps> = ({ config, localAirs, c
         // TODO: Pass resources to clients if needed
         return {
             llm: new LiteLLMClient(config.llm.gatewayUrl), // Updated path
-            proxy: new GenericProxyClient(config.llm.proxyUrl) // Updated path
+            proxy: new GenericProxyClient(config.llm.proxyUrl), // Updated path
+            apiUrl: config.apiUrl
         };
     }, [config]);
 

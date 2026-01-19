@@ -45,10 +45,23 @@ export interface IProxyClient {
 export interface IAuraCapabilities {
     llm: ILlmClient;
     proxy: IProxyClient;
+    apiUrl?: string;
 }
 
 export interface IAuraConfig {
     llm: import('../storage/config').ILLMConfig; // We need to define this or reuse existing
     storage: import('../storage/config').AuraStorageConfig;
+    apiUrl?: string;
     resources?: Record<string, any>; // Resource Registry Overrides
+}
+
+export interface AuraProject {
+    id: string;
+    name: string;
+    state: any;
+    user_id: string;
+    is_public?: boolean;
+    is_pinned?: boolean;
+    created_at: string;
+    updated_at: string;
 }

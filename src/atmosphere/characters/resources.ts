@@ -1,3 +1,5 @@
+import { ENRICH_SYSTEM_PROMPT } from './prompts';
+
 export const resources = {
     api: {
         tmdb: {
@@ -43,8 +45,9 @@ export const resources = {
             enrich: {
                 mode: 'chat',
                 model: 'gemini-2.5-pro',
-                systemPrompt: 'You are a movie/TV expert. Provide brief 1-sentence descriptions for the characters.'
+                systemPrompt: ENRICH_SYSTEM_PROMPT
             }
         }
     }
 } as const;
+

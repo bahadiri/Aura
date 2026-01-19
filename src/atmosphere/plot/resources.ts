@@ -1,3 +1,5 @@
+import { STORYTELLER_SYSTEM_PROMPT } from './prompts';
+
 export const resources = {
     api: {
         tmdb: {
@@ -32,7 +34,8 @@ export const resources = {
         storyteller: {
             mode: "chat",
             model: "gemini-2.5-pro",
-            systemPrompt: "You are an expert storyteller. Expand, explain, or modify the text based on user query. Maintain tone. output ONLY new text."
+            systemPrompt: STORYTELLER_SYSTEM_PROMPT
         }
     }
 } as const;
+

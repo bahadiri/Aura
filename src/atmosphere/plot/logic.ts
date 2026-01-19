@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAura } from '../../sdk';
 import { resources } from './resources';
 import { flux } from '../../flux'; // Assuming flux is effectively a global event bus we still use
+import { expandPlotPrompt } from './prompts';
 
 export interface Episode {
     id: string | number;
@@ -162,7 +163,7 @@ export const usePlotLogic = ({
             const response = await llm.invoke(resources.ai.storyteller, {
                 messages: [
                     { role: "system", content: resources.ai.storyteller.systemPrompt }, // Optional if handled in client
-                    { role: "user", content: `Current Text: "${currentText}"\nInstruction: ${userInstruction}` }
+                    { role: "user", content: expandPlotPrompt(currentText, userInstruction) }
                 ]
             });
             console.log(`[PlotAir] Expansion result:`, response);
