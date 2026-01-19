@@ -1,8 +1,10 @@
 # 🌌 Aura
 
-**A spatial, agentic window manager for the AI age.**
+**A UX for the Gen AI age based on UI Retrieval Philosophy.**
 
-Aura rethinks the traditional desktop interface by replacing static windows with **AIRs** (Agentic Interface Respondents) that live in a shared, reactive environment called **The Space**.
+For real enriched experiences, just chatting is not enough. We should be able to talk, see visuals, and interact with the UI. While "generative UI" promises this, it often falls short in practice.
+
+Aura alternatively provides the **UI Retrieval Philosophy**: instead of generating fragile interfaces on the fly, it intelligently retrieves and composes highly-polished, interactive **AIRs** (Agentic Interface Respondents) into a shared, reactive environment called **The Space**.
 
 ![Aura](assets/Cool!.PNG)
 
