@@ -1,6 +1,19 @@
 {
     "name": "@minnai/aura",
-    "version": "0.1.0",
+    "version": "0.1.1",
+    "description": "A UX for the Gen AI age based on UI Retrieval Philosophy.",
+    "keywords": [
+        "react",
+        "generative-ai",
+        "agentic-ui",
+        "ui-retrieval",
+        "aura"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/bahadiri/Aura.git"
+    },
+    "license": "MIT",
     "publishConfig": {
         "access": "public"
     },

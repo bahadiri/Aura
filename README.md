@@ -6,7 +6,7 @@ For real enriched experiences, just chatting is not enough. We should be able to
 
 Aura alternatively provides the **UI Retrieval Philosophy**: instead of generating fragile interfaces on the fly, it intelligently retrieves and composes highly-polished, interactive **AIRs** (Agentic Interface Respondents) into a shared, reactive environment called **The Space**.
 
-![Aura](assets/Cool!.PNG)
+![Aura](https://raw.githubusercontent.com/bahadiri/Aura/prod/assets/Cool!.PNG)
 
 ## Documentation
 
