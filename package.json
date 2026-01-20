@@ -32,12 +32,43 @@
             "types": "./dist/sdk/index.d.ts",
             "import": "./dist/sdk/index.js"
         },
-        "./atmosphere/*": "./dist/atmosphere/*",
-        "./hooks/*": "./dist/hooks/*"
+        "./sdk/index": {
+            "types": "./dist/sdk/index.d.ts",
+            "import": "./dist/sdk/index.js"
+        },
+        "./atmosphere": {
+            "types": "./dist/atmosphere/index.d.ts",
+            "import": "./dist/atmosphere/index.js"
+        },
+        "./atmosphere/manifests": {
+            "types": "./dist/atmosphere/manifests.d.ts",
+            "import": "./dist/atmosphere/manifests.js"
+        },
+        "./controller/Space": {
+            "types": "./dist/controller/Space.d.ts",
+            "import": "./dist/controller/Space.js"
+        },
+        "./controller/useController": {
+            "types": "./dist/controller/useController.d.ts",
+            "import": "./dist/controller/useController.js"
+        },
+        "./flux/index": {
+            "types": "./dist/flux/index.d.ts",
+            "import": "./dist/flux/index.js"
+        },
+        "./hooks/useVoiceInput": {
+            "types": "./dist/hooks/useVoiceInput.d.ts",
+            "import": "./dist/hooks/useVoiceInput.js"
+        },
+        "./storage/config": {
+            "types": "./dist/storage/config.d.ts",
+            "import": "./dist/storage/config.js"
+        }
     },
     "scripts": {
         "dev": "vite",
-        "build": "tsc -p tsconfig.build.json",
+        "build": "tsc -p tsconfig.build.json && npm run copy-styles",
+        "copy-styles": "npx copyfiles -u 1 \"src/**/*.css\" dist",
         "build:vite": "vite build",
         "preview": "vite preview",
         "test": "vitest run",
@@ -48,9 +79,9 @@
         "react-rnd": "^10.4.1"
     },
     "peerDependencies": {
+        "firebase": ">=10.0.0",
         "react": ">=18.0.0",
-        "react-dom": ">=18.0.0",
-        "firebase": ">=10.0.0"
+        "react-dom": ">=18.0.0"
     },
     "devDependencies": {
         "@playwright/test": "^1.57.0",
@@ -59,6 +90,7 @@
         "@types/react": "^18.2.66",
         "@types/react-dom": "^18.2.22",
         "@vitejs/plugin-react": "^4.2.1",
+        "copyfiles": "^2.4.1",
         "jsdom": "^27.4.0",
         "typescript": "^5.2.2",
         "vite": "^5.2.0",
