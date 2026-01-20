@@ -1,23 +1,31 @@
 {
     "name": "@aura/core",
     "version": "0.1.0",
-    "private": true,
     "type": "module",
-    "main": "src/index.ts",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
     "exports": {
-        ".": "./src/index.ts",
-        "./sdk": "./src/sdk/index.ts",
-        "./controller/*": "./src/controller/*",
-        "./storage/*": "./src/storage/*",
-        "./atmosphere/*": "./src/atmosphere/*",
-        "./hooks/*": "./src/hooks/*",
-        "./flux/*": "./src/flux/*"
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./sdk": {
+            "types": "./dist/sdk/index.d.ts",
+            "import": "./dist/sdk/index.js"
+        },
+        "./atmosphere/*": "./dist/atmosphere/*",
+        "./hooks/*": "./dist/hooks/*"
     },
     "scripts": {
         "dev": "vite",
-        "build": "tsc && vite build",
+        "build": "tsc -p tsconfig.build.json",
+        "build:vite": "vite build",
         "preview": "vite preview",
-        "test": "vitest run"
+        "test": "vitest run",
+        "prepublishOnly": "npm run build"
     },
     "dependencies": {
         "idb-keyval": "^6.2.2",
