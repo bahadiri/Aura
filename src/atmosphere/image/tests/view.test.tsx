@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { View } from '../view';
+import View from '../ui';
 
 describe('ImageAIR View', () => {
     it('renders image', () => {

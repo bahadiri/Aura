@@ -110,12 +110,12 @@ export const useCharactersLogic = ({
             setFetchedTitle(newTitle);
 
             // 2. Fetch Credits
-            let creditsConfig = mediaType === 'movie' 
-                ? { ...resources.api.tmdb.credits.config } 
+            let creditsConfig = mediaType === 'movie'
+                ? { ...resources.api.tmdb.credits.config }
                 : { ...resources.api.tmdb.creditsTV.config };
 
             // Manually replace {id} as proxy doesn't handle templates
-            creditsConfig.url = creditsConfig.url.replace('{id}', String(mediaId));
+            creditsConfig.url = creditsConfig.url.replace('{id}', String(mediaId)) as any;
 
             const creditsData = await proxy.fetch(creditsConfig, { params: {} });
 

@@ -24,7 +24,8 @@ export const AuraProvider: React.FC<AuraProviderProps> = ({ config, ambience, ch
         return {
             llm: new LiteLLMClient(config.llm.gatewayUrl), // Updated path
             proxy: new GenericProxyClient(config.llm.proxyUrl), // Updated path
-            apiUrl: config.apiUrl
+            apiUrl: config.apiUrl,
+            ambience: ambience
         };
     }, [config]);
 

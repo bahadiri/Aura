@@ -15,10 +15,23 @@ interface SpaceProps {
 
 export const Space: React.FC<SpaceProps> = ({ projectId, userId, onError }) => {
     const [project, setProject] = useState<AuraProject | null>(null);
-    const { apiUrl } = useAura();
+    const { apiUrl, ambience } = useAura();
     const [loading, setLoading] = useState(!!projectId);
     const [saving, setSaving] = useState(false);
     const initializedRef = useRef(false);
+
+    // 0. Ingest Ambience (New)
+    useEffect(() => {
+        if (ambience) {
+            console.log("[Space] Ingesting Ambience:", ambience.length);
+            ambience.forEach((entry: any) => {
+                // If the entry itself is a manifest or has one
+                if (entry.id && entry.component) {
+                    atmosphere.register(entry);
+                }
+            });
+        }
+    }, [ambience]);
 
     const controller = useController();
     const { windows, spawnWindow, closeWindow, minimizeWindow, focusWindow, language, setLanguage, reflect, serialize, loadState } = controller;

@@ -46,6 +46,7 @@ export interface IAuraCapabilities {
     llm: ILlmClient;
     proxy: IProxyClient;
     apiUrl?: string;
+    ambience?: IAmbienceEntry[];
 }
 
 export interface IAuraConfig {
@@ -64,4 +65,14 @@ export interface AuraProject {
     is_pinned?: boolean;
     created_at: string;
     updated_at: string;
+}
+
+export interface IAmbienceEntry {
+    id: string;
+    name: string;
+    description?: string;
+    symbol: string;
+    component: React.ComponentType<any> | string;
+    manifest?: any;
+    [key: string]: any;
 }

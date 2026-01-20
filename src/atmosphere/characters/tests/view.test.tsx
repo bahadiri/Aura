@@ -1,6 +1,6 @@
 /// <reference types="vitest/globals" />
 import { render } from '@testing-library/react';
-import { View } from '../view';
+import View from '../ui';
 
 
 describe('CharactersAIR View', () => {

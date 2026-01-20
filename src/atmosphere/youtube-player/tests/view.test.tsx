@@ -1,7 +1,7 @@
 /// <reference types="vitest/globals" />
 import React from 'react';
 import { render } from '@testing-library/react';
-import { View } from '../view';
+import View from '../ui';
 
 describe('YoutubePlayerAIR View', () => {
     it('renders iframe when videoId provided', () => {

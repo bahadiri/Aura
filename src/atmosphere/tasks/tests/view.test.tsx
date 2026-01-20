@@ -1,7 +1,7 @@
 /// <reference types="vitest/globals" />
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
-import { View } from '../view';
+import View from '../ui';
 
 describe('TasksAIR View', () => {
     const tasks = [{ id: 1, label: 'Task 1', completed: false }];
