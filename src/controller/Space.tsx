@@ -7,13 +7,16 @@ import { FluxMessage } from '../flux/types';
 import { getStorage } from '../storage';
 import { AuraProject, useAura } from '../sdk';
 
+import { MobileView } from './MobileView';
+
 interface SpaceProps {
     projectId?: string;
     userId?: string; // Current user ID for permission checks
     onError?: (error: Error) => void;
+    mobile?: boolean;
 }
 
-export const Space: React.FC<SpaceProps> = ({ projectId, userId, onError }) => {
+export const Space: React.FC<SpaceProps> = ({ projectId, userId, onError, mobile }) => {
     const [project, setProject] = useState<AuraProject | null>(null);
     const { apiUrl, ambience } = useAura();
     const [loading, setLoading] = useState(!!projectId);
@@ -212,6 +215,10 @@ export const Space: React.FC<SpaceProps> = ({ projectId, userId, onError }) => {
 
     if (loading) {
         return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#666' }}>Loading Space...</div>;
+    }
+
+    if (mobile) {
+        return <MobileView windows={windows} controller={controller} />;
     }
 
     return (
