@@ -183,6 +183,16 @@ export function useController(initialState?: any) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message, messages, available_airs, open_airs: openAIRs })
             });
+
+            if (!res.ok) {
+                // Handle 404 or other errors more gracefully, maybe retry or just log as text
+                const text = await res.text();
+                console.error("[Controller] Reflection API Error:", res.status, text);
+                // Fallback: If 404 (route missing?), maybe we are on a proxy that doesn't support chat yet?
+                // Return a simple message response?
+                return [{ action: 'message', id: 'assistant', props: { content: "I'm having trouble connecting to my brain (404). Please check the API configuration." } }];
+            }
+
             const actions = await res.json();
 
             if (Array.isArray(actions)) {
@@ -191,9 +201,11 @@ export function useController(initialState?: any) {
             }
         } catch (err) {
             console.error("[Controller] Reflection failed:", err);
+            // Return empty so chat stops processing
+            return [{ action: 'message', id: 'assistant', props: { content: "Sorry, I'm having trouble connecting." } }];
         }
         return [];
-    }, [spawnWindow]);
+    }, [apiUrl]); // Only re-create if apiUrl changes. spawnWindow is stable or not needed here.
 
     const getContext = useCallback(() => {
         const context: any = {

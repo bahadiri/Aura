@@ -1,5 +1,5 @@
-// Core SDK exports
 export * from './sdk';
+export * from './components/chat';
 
 // Atmosphere AIRs - import and re-export with clear names
 export { Component as PlotAIR } from './atmosphere/plot';

@@ -5,7 +5,7 @@ const PomodoroUI: React.FC = () => {
     const [isActive, setIsActive] = useState(false);
 
     useEffect(() => {
-        let interval: NodeJS.Timeout | null = null;
+        let interval: any = null;
         if (isActive && seconds > 0) {
             interval = setInterval(() => {
                 setSeconds(seconds => seconds - 1);
