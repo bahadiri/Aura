@@ -11,6 +11,7 @@ interface AuraProviderProps {
     children: React.ReactNode;
 }
 
+import { ControllerProvider } from '../controller/ControllerContext';
 import { createStorage } from '../storage';
 
 export const AuraProvider: React.FC<AuraProviderProps> = ({ config, ambience, children }) => {
@@ -25,13 +26,16 @@ export const AuraProvider: React.FC<AuraProviderProps> = ({ config, ambience, ch
             llm: new LiteLLMClient(config.llm.gatewayUrl), // Updated path
             proxy: new GenericProxyClient(config.llm.proxyUrl), // Updated path
             apiUrl: config.apiUrl,
-            ambience: ambience
+            ambience: ambience,
+            sessionId: config.sessionId
         };
     }, [config]);
 
     return (
         <AuraContext.Provider value={capabilities}>
-            {children}
+            <ControllerProvider>
+                {children}
+            </ControllerProvider>
         </AuraContext.Provider>
     );
 };

@@ -101,22 +101,38 @@ export const useYoutubeLogic = ({ videoId: initialVideoId, query, autoplay = fal
             // So we catch below.
 
         } catch (err) {
-            console.warn("[YouTubeAIR] Proxy search failed, trying backend scraper fallback...", err);
+            console.warn("[YouTubeAIR] Proxy search failed, trying backend fallback...", err);
 
-            // B. Fallback to Backend Scraper
+            // B. Fallback to Backend (Saga Python or Proxy Node)
             try {
-                // We use standard fetch here to hit the backend endpoint directly
-                // Assuming Vite proxy or absolute URL setup
-                const port = import.meta.env.VITE_SAGA_BACKEND_PORT || '8001';
-                const baseUrl = import.meta.env.VITE_SAGA_API_URL || `http://localhost:${port}`;
-                const res = await fetch(`${baseUrl}/api/search/video?q=${encodeURIComponent(q)}`);
-                const fallbackData = await res.json();
+                // Use configured API URL or standard proxy URL
+                // The Node proxy backend exposes /v1/video which returns standard YouTube API response
+                const baseUrl = import.meta.env.VITE_SAGA_API_URL || import.meta.env.VITE_PROXY_URL || 'http://localhost:8001';
 
-                if (fallbackData.videoId) {
-                    updateVideo(fallbackData.videoId, q);
-                } else {
-                    setError(fallbackData.error || "Video not found.");
+                // Try the Node Proxy Endpoint first (/v1/video)
+                let res = await fetch(`${baseUrl}/v1/video?q=${encodeURIComponent(q)}`);
+                let fallbackData;
+
+                if (res.ok) {
+                    fallbackData = await res.json();
+                    if (fallbackData.items && fallbackData.items.length > 0) {
+                        updateVideo(fallbackData.items[0].id.videoId, q);
+                        return;
+                    }
                 }
+
+                // If that failed or 404, try the python scraper endpoint (/api/search/video)
+                // This is legacy Saga support
+                res = await fetch(`${baseUrl}/api/search/video?q=${encodeURIComponent(q)}`);
+                if (res.ok) {
+                    fallbackData = await res.json();
+                    if (fallbackData.videoId) {
+                        updateVideo(fallbackData.videoId, q);
+                        return;
+                    }
+                }
+
+                setError("Video not found via backend.");
             } catch (fbErr) {
                 console.error("[YouTubeAIR] Fallback search failed", fbErr);
                 setError("Search failed.");

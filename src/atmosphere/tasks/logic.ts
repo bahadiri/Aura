@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { flux } from '../../flux';
 import { useAura } from '../../sdk'; // Correct SDK import
+import { getStorage } from '../../storage';
 import { TaskItem, TasksUIProps } from './ui';
 
 export interface UseTasksProps {
@@ -11,36 +12,68 @@ export interface UseTasksProps {
 }
 
 export const useTasksLogic = (props: UseTasksProps) => {
-    const { proxy, llm } = useAura(); // Access SDK capabilities
+    const { proxy, llm, sessionId } = useAura(); // Access SDK capabilities
     const { initialTasks = [], title = "TASKS", windowId, updateWindow } = props;
-    const [tasks, setTasks] = useState<TaskItem[]>(initialTasks);
 
-    // Sync from props
-    useEffect(() => {
-        if (props.initialTasks && Array.isArray(props.initialTasks)) {
-            setTasks(props.initialTasks);
-        }
-    }, [props.initialTasks]);
+    // Use session-scoped collection to ensure fresh start on refresh
+    const COLLECTION = `tasks_${sessionId || 'default'}`;
+    const DOC_ID = 'main_list';
 
-    const persist = (newTasks: TaskItem[]) => {
-        if (updateWindow) {
-            updateWindow({ props: { ...props, initialTasks: newTasks } });
+    // Load initial state from storage
+    const loadFromStorage = async (): Promise<TaskItem[]> => {
+        try {
+            // We use a single document 'main_list' to store the array for atomicity
+            const doc = await getStorage().documents.get<{ items: TaskItem[] }>(COLLECTION, DOC_ID);
+            return doc?.items || initialTasks;
+        } catch (e) {
+            console.error("Failed to load tasks from Aura Storage", e);
+            return initialTasks;
         }
     };
 
+    const [tasks, setTasks] = useState<TaskItem[]>(initialTasks);
+
+    // Initial Load & Session Change
+    useEffect(() => {
+        let mounted = true;
+        loadFromStorage().then(loaded => {
+            if (mounted && (loaded.length > 0 || initialTasks.length === 0)) {
+                setTasks(loaded);
+            }
+        });
+        return () => { mounted = false; };
+    }, [sessionId]);
+
+    const persist = async (newTasks: TaskItem[]) => {
+        try {
+            // Upsert the main list document
+            // We can use create or update. FileSystemAdapter 'create' appends if not exists.
+            // But we want to overwrite the specific DOC_ID.
+            const exists = await getStorage().documents.get(COLLECTION, DOC_ID);
+            if (exists) {
+                await getStorage().documents.update(COLLECTION, DOC_ID, { items: newTasks });
+            } else {
+                await getStorage().documents.create(COLLECTION, { id: DOC_ID, items: newTasks });
+            }
+        } catch (e) {
+            console.error("Persist failed", e);
+        }
+    };
+
+    // Listen for Flux Changes (Optimistic Updates)
+    // We already have local state 'tasks'. When we update 'tasks', we call persist.
+    // Ensure all instances share state via Flux if possible, but for now relying on single-source-of-truth 
+    // + optimistic updates from ChatInterface is key.
+
     const toggleTask = (id: string | number) => {
+        // Optimistic update
         const newTasks = tasks.map(t => {
             if (t.id === id) {
                 const updated = { ...t, completed: !t.completed };
                 if (updated.completed) {
-                    // Notify Controller -> Chat
                     flux.dispatch({
                         type: 'TASK_COMPLETED',
-                        payload: {
-                            taskId: id,
-                            taskLabel: t.label,
-                            windowId
-                        },
+                        payload: { taskId: id, taskLabel: t.label, windowId },
                         to: 'all'
                     });
                 }
@@ -66,15 +99,74 @@ export const useTasksLogic = (props: UseTasksProps) => {
     // Listen for Chat Commands
     useEffect(() => {
         const unsubscribe = flux.subscribe((msg: any) => {
+            console.log(`[TasksAIR ${windowId || 'inline'}] Flux Msg:`, msg.type);
+
             if (msg.type === 'ADD_TASK' && (msg.to === 'all' || msg.to === 'tasks-air')) {
-                const label = msg.payload.label || msg.payload.task;
-                if (label) {
-                    addTask(label);
+                let itemsToAdd: string[] = [];
+                // Robust parsing of payload
+                if (Array.isArray(msg.payload.tasks)) itemsToAdd = msg.payload.tasks;
+                else if (Array.isArray(msg.payload.items)) itemsToAdd = msg.payload.items;
+                else if (msg.payload.label) itemsToAdd = [msg.payload.label];
+                else if (msg.payload.task) itemsToAdd = [msg.payload.task];
+
+                console.log(`[TasksAIR] Adding items:`, itemsToAdd);
+
+                if (itemsToAdd.length > 0) {
+                    const newItems = itemsToAdd.map(label => ({
+                        id: crypto.randomUUID(),
+                        label,
+                        completed: false
+                    }));
+
+                    // Use functional update to get latest state from closure
+                    setTasks(prev => {
+                        const updated = [...prev, ...newItems];
+                        persist(updated); // Persist the new state
+                        return updated;
+                    });
                 }
+            } else if (msg.type === 'TOGGLE_TASK' && (msg.to === 'all' || msg.to === 'tasks-air')) {
+                const targetLabel = msg.payload.label || msg.payload.task;
+                if (!targetLabel) {
+                    console.error('[TasksAIR] TOGGLE_TASK missing label/task in payload:', msg.payload);
+                    return;
+                }
+
+                console.log(`[TasksAIR] Toggling: ${targetLabel}`);
+
+                setTasks(prev => {
+                    const newTasks = prev.map(t => {
+                        if (t.label.toLowerCase().includes(targetLabel.toLowerCase())) {
+                            const updated = { ...t, completed: !t.completed };
+                            if (updated.completed) {
+                                flux.dispatch({
+                                    type: 'TASK_COMPLETED',
+                                    payload: { taskId: t.id, taskLabel: t.label, windowId },
+                                    to: 'all'
+                                });
+                            }
+                            return updated;
+                        }
+                        return t;
+                    });
+                    persist(newTasks);
+                    return newTasks;
+                });
+            } else if (msg.type === 'REQUEST_CONTEXT') {
+                // Generic Generic Context Provider
+                // Broadcast full state so Chat can see what we have
+                flux.dispatch({
+                    type: 'PROVIDE_CONTEXT',
+                    payload: {
+                        id: 'tasks-air',
+                        context: { tasks }
+                    },
+                    to: 'all'
+                });
             }
         });
         return unsubscribe;
-    }, [tasks]);
+    }, [tasks]); // Add 'tasks' dependency so we always send latest state
 
     return {
         tasks,

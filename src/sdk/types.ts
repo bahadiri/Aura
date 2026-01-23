@@ -46,14 +46,16 @@ export interface IAuraCapabilities {
     llm: ILlmClient;
     proxy: IProxyClient;
     apiUrl?: string;
+    sessionId?: string; // Added for TasksAI context
     ambience?: IAmbienceEntry[];
 }
 
 export interface IAuraConfig {
-    llm: import('../storage/config').ILLMConfig; // We need to define this or reuse existing
+    llm: import('../storage/config').ILLMConfig;
     storage: import('../storage/config').AuraStorageConfig;
     apiUrl?: string;
-    resources?: Record<string, any>; // Resource Registry Overrides
+    sessionId?: string; // Added for config
+    resources?: Record<string, any>;
 }
 
 export interface AuraProject {
@@ -75,4 +77,18 @@ export interface IAmbienceEntry {
     component: React.ComponentType<any> | string;
     manifest?: any;
     [key: string]: any;
+}
+
+export interface ContextHandler {
+    /**
+     * Returns the current context/state of the AIR.
+     * This is used by the Intent Planner to understand what the user is looking at.
+     */
+    getContext(): Promise<any>;
+
+    /**
+     * List of capabilities this AIR supports.
+     * e.g. ['text-editing', 'video-playback', 'market-data']
+     */
+    capabilities: string[];
 }

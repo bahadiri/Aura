@@ -52,6 +52,7 @@ export const ChatInterface = ({
         speak
     } = useVoiceInput();
 
+    const inputRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const prevMessagesLength = useRef(0);
@@ -79,12 +80,15 @@ export const ChatInterface = ({
 
     // Sync voice transcript to input (Final + Interim for real-time feel)
     useEffect(() => {
+        // Prevent voice updates from overwriting input while sending/processing
+        if (isProcessing || isSendingRef.current) return;
+
         if (isListening) {
             setInputValue(transcript + interimTranscript);
         } else if (transcript) {
             setInputValue(transcript);
         }
-    }, [transcript, interimTranscript, isListening]);
+    }, [transcript, interimTranscript, isListening, isProcessing]);
 
     // Auto-scroll logic: Only scroll if enabled and new message added OR user was already at bottom
     useEffect(() => {
@@ -132,24 +136,67 @@ export const ChatInterface = ({
         });
     }, [messages, poppedOutIds]);
 
-    // Track active AIRs (inline + Space)
+    // Track active AIRs (inline + Space via Flux)
+    const [spaceAIRs, setSpaceAIRs] = useState<string[]>([]);
+
     useEffect(() => {
         const inlineAIRs = messages
             .filter(m => m.attachment && !poppedOutIds.has(m.attachment.instanceId || ''))
             .map(m => m.attachment!.id);
 
-        const spaceAIRs = controller.windows.map(w => w.manifestId);
-
         const allActive = Array.from(new Set([...inlineAIRs, ...spaceAIRs]));
         setActiveAIRs(allActive);
-    }, [messages, controller.windows, poppedOutIds]);
+    }, [messages, spaceAIRs, poppedOutIds]);
+
+    // Flux State Sync
+    useEffect(() => {
+        const unsubscribe = flux.subscribe((msg: any) => {
+            if (msg.type === 'WINDOW_CLOSED') {
+                setPoppedOutIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(msg.payload.id);
+                    return next;
+                });
+                setSpaceAIRs(prev => prev.filter(id => id !== msg.payload.manifesId)); // Assuming payload has manifestId? Or we need to re-fetch
+                // Actually easier to just Request State again or trust payload contains manifestId?
+                // Standard WINDOW_CLOSED payload is { id }. ID is instanceId.
+                // We need manifestId. Requesting full state is safer.
+                flux.dispatch({ type: 'REQUEST_CONTROLLER_STATE', payload: {}, to: 'controller' });
+            }
+            if (msg.type === 'CONTROLLER_STATE') {
+                const windows = msg.payload.windows || [];
+                setSpaceAIRs(windows.map((w: any) => w.manifestId));
+                console.log("[Chat] Synced Space AIRs:", windows.map((w: any) => w.manifestId));
+            }
+            if (msg.type === 'SPAWN_AIR' || msg.type === 'WINDOW_SPAWNED') {
+                flux.dispatch({ type: 'REQUEST_CONTROLLER_STATE', payload: {}, to: 'controller' });
+            }
+        });
+
+        // Initial Request
+        flux.dispatch({ type: 'REQUEST_CONTROLLER_STATE', payload: {}, to: 'controller' });
+
+        return unsubscribe;
+    }, []);
+
+    // Ref for synchronous locking of voice input during send
+    const isSendingRef = useRef(false);
 
     const handleSend = async () => {
         if (!inputValue.trim() || isProcessing) return;
 
+        // 1. Synchronously block voice updates
+        isSendingRef.current = true;
+
+        // 2. Stop listening immediately if active
+        if (isListening) {
+            stopListening();
+        }
+
+        // 3. Clear voice buffer & input *before* async work
+        resetTranscript();
         const text = inputValue;
-        setInputValue('');
-        resetTranscript(); // Clear voice buffer
+        setInputValue(''); // Immediate clear to prevent "ghost" text
 
         // Optimistic Update
         setMessages(prev => [...prev, { role: 'user', content: text }]);
@@ -157,9 +204,6 @@ export const ChatInterface = ({
 
         if (onSend) {
             onSend(text);
-            // If onSend is provided, we assume parent handles everything else? 
-            // Or do we still do reflection? 
-            // Let's assume onSend is a side-effect hook, but core logic remains here for "Aura Chat".
         }
 
         // Emit CHAT_PROMPT for auto-naming feature
@@ -169,86 +213,183 @@ export const ChatInterface = ({
             to: 'assistant'
         });
 
+        /* CONTEXT GATHERING */
+        const gatherContext = async () => {
+            return new Promise<any>((resolve) => {
+                const contexts: any = {};
+                let handled = false;
+
+                // 1. Setup Listener
+                const unsubscribe = flux.subscribe((msg: any) => {
+                    if (msg.type === 'PROVIDE_CONTEXT' && msg.payload.context) {
+                        console.log(`[Chat] Received Context from ${msg.payload.id}`, msg.payload.context);
+                        contexts[msg.payload.id] = msg.payload.context;
+                    }
+                });
+
+                // 2. Broadcast Request
+                flux.dispatch({ type: 'REQUEST_CONTEXT', payload: { initiator: 'chat' }, to: 'all' });
+
+                // 3. Timeout (Wait 300ms for local AIRs to respond)
+                setTimeout(() => {
+                    if (!handled) {
+                        handled = true;
+                        unsubscribe();
+                        resolve(contexts);
+                    }
+                }, 300);
+            });
+        };
+
         try {
-            // 1. REFLECTION STEP
+            // 3. REFLECTION STEP
             console.log("Reflecting on:", text);
-            console.log("Active AIRs:", activeAIRs);
-            const actions = await controller.reflect(text, messages, activeAIRs);
+            const airContext = await gatherContext();
+            console.log("Active AIRs:", activeAIRs, "Context:", airContext);
+
+            // Inject context into system prompt logic via reflect
+            const actions = await controller.reflect(text, messages, activeAIRs, airContext);
 
             let finalContent = '';
 
-            // 2. INLINE ATTACHMENTS (Chat-First UX)
+            // 4. INLINE ATTACHMENTS (Chat-First UX)
             if (actions && Array.isArray(actions) && actions.length > 0) {
+                console.log("[Chat] Received actions:", actions);
+                console.log("[Chat] Active Windows:", controller.windows);
+
+                const spawnedThisLoop = new Set<string>();
+
                 actions.forEach((action: any) => {
                     if (action.id === 'assistant') return;
 
-                    // Handle append action for singleton AIRs (e.g. Note Taker)
-                    // TODO: Make this generic via Manifest configuration (e.g. manifest.isSingleton)
-                    if (action.action === 'append' && action.id === 'note-taker-air') {
-                        // Check if it's inline (in chat messages)
-                        const existingNoteIdx = messages.findIndex(
-                            m => m.attachment?.id === 'note-taker-air' && !poppedOutIds.has(m.attachment.instanceId || '')
-                        );
+                    // Broad Handling for TasksAIR Actions
+                    if (action.id === 'tasks-air') {
+                        console.log(`[Chat] Intercepting TasksAIR Action: ${action.action}`, action.props);
 
-                        if (existingNoteIdx >= 0) {
-                            // Update existing inline note
-                            setMessages(prev => {
-                                const updated = [...prev];
-                                const current = updated[existingNoteIdx].attachment!.props.initialValue || '';
-                                const newContent = action.props.content || '';
-                                updated[existingNoteIdx].attachment!.props.initialValue =
-                                    current + (current ? '\n' : '') + newContent;
-                                return updated;
-                            });
-                        } else {
-                            // Check if it's in Space (popped out or directly spawned there)
-                            const spaceNoteTaker = controller.windows.find(w => w.manifestId === 'note-taker-air');
-                            if (spaceNoteTaker) {
-                                // Dispatch append to controller
-                                flux.dispatch({
-                                    type: 'SPAWN_AIR',
-                                    payload: {
-                                        id: action.id,
-                                        props: action.props // Contains content and updateTs
-                                    },
-                                    to: 'controller'
-                                });
-                            } else {
-                                // No Note Taker exists anywhere - create new inline
+                        const act = (action.action || 'create').toLowerCase();
+                        let fluxType = '';
+                        let payload = { ...action.props };
+
+                        // 1. Identify Intent
+                        if (act.includes('add') || act.includes('create') || act.includes('spawn')) {
+                            fluxType = 'ADD_TASK';
+                            // Normalize payload if needed
+                            if (payload.itemToAdd) payload.task = payload.itemToAdd;
+                        } else if (act.includes('toggle') || act.includes('complete') || act.includes('finish') || act.includes('check') || act.includes('mark') || act.includes('cross')) {
+                            fluxType = 'TOGGLE_TASK';
+                        }
+
+                        if (fluxType) {
+                            console.log(`[Chat] Mapped ${action.action} to ${fluxType}`);
+
+                            // 2. Ensure TasksAIR is Open (Inline Default)
+                            if (!activeAIRs.includes('tasks-air') && !spawnedThisLoop.has('tasks-air')) {
+                                console.log('[Chat] TasksAIR not active, opening INLINE');
+                                spawnedThisLoop.add('tasks-air');
                                 setMessages(prev => [...prev, {
                                     role: 'assistant',
-                                    content: '',
+                                    content: '', // Empty content, just the AIR
                                     attachment: {
-                                        id: action.id,
-                                        props: { initialValue: action.props.content },
+                                        id: 'tasks-air',
+                                        props: {},
                                         instanceId: crypto.randomUUID()
                                     }
                                 }]);
-                            }
-                        }
-                    } else {
-                        // Generate deterministic ID for characters to allow updates
-                        let instanceId: string = crypto.randomUUID();
-                        if (action.id === 'characters-air' && (action.props.title || action.props.query)) {
-                            const payload = action.props.title || action.props.query;
-                            const slug = payload.toString().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                            instanceId = `${action.id}-${slug}`;
-                        }
 
-                        setMessages(prev => [...prev, {
-                            role: 'assistant',
-                            content: '',
-                            attachment: {
-                                id: action.id,
-                                props: action.props,
-                                instanceId: instanceId
+                                // We don't need to dispatch SPAWN_AIR to controller anymore.
+                                // The AIR will mount in the chat, connect to Flux, and handle the subsequent command.
                             }
-                        }]);
+
+                            // 3. Dispatch Command
+                            setTimeout(() => {
+                                console.log(`[Chat] Dispatching ${fluxType}`, payload);
+                                flux.dispatch({
+                                    type: fluxType,
+                                    payload: payload,
+                                    to: 'all'
+                                });
+                            }, 500); // Reduced delay slightly
+
+                            return; // Handled
+                        }
                     }
+
+                    // Handle actions for Note Taker AIR
+                    if (action.id === 'note-taker-air') {
+                        const act = action.action.toLowerCase();
+
+                        // Map manifest actions to internal logic
+                        // 'append_note' -> append logic
+                        // 'replace_note' -> 'replace' prop logic? (Currently logic.ts only handles 'content' append via props)
+                        // 'polish_note' -> trigger polish? (Need to dispatch specific event or just rely on prop updates)
+
+                        if (act === 'append_note' || act === 'append') {
+                            // Check if it's inline (in chat messages)
+                            const existingNoteIdx = messages.findIndex(
+                                m => m.attachment?.id === 'note-taker-air' && !poppedOutIds.has(m.attachment.instanceId || '')
+                            );
+
+                            if (existingNoteIdx >= 0) {
+                                // Update existing inline note
+                                setMessages(prev => {
+                                    const updated = [...prev];
+                                    // Pass content delta + timestamp to trigger logic.ts effect
+                                    updated[existingNoteIdx].attachment!.props.content = action.props.content;
+                                    updated[existingNoteIdx].attachment!.props.updateTs = Date.now();
+                                    return updated;
+                                });
+                            } else {
+                                // Check if it's in Space (popped out or directly spawned there)
+                                const spaceNoteTaker = controller.windows.find(w => w.manifestId === 'note-taker-air');
+                                if (spaceNoteTaker) {
+                                    // Dispatch append to controller
+                                    flux.dispatch({
+                                        type: 'SPAWN_AIR',
+                                        payload: {
+                                            id: action.id,
+                                            props: { content: action.props.content, updateTs: Date.now() } // Contains content and updateTs
+                                        },
+                                        to: 'controller'
+                                    });
+                                } else {
+                                    // No Note Taker exists anywhere - create new inline
+                                    setMessages(prev => [...prev, {
+                                        role: 'assistant',
+                                        content: '',
+                                        attachment: {
+                                            id: action.id,
+                                            props: { initialValue: action.props.content },
+                                            instanceId: crypto.randomUUID()
+                                        }
+                                    }]);
+                                }
+                            }
+                            return; // Handled
+                        }
+                    }
+
+                    // Generic Spawning Logic (Restored)
+                    // Generate deterministic ID for characters to allow updates
+                    let instanceId: string = crypto.randomUUID();
+                    if (action.id === 'characters-air' && (action.props.title || action.props.query)) {
+                        const payload = action.props.title || action.props.query;
+                        const slug = payload.toString().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                        instanceId = `${action.id}-${slug}`;
+                    }
+
+                    setMessages(prev => [...prev, {
+                        role: 'assistant',
+                        content: '',
+                        attachment: {
+                            id: action.id,
+                            props: action.props,
+                            instanceId: instanceId
+                        }
+                    }]);
                 });
             }
 
-            // 3. TEXT RESPONSE (Assistant Message)
+            // 5. TEXT RESPONSE (Assistant Message)
             if (actions && Array.isArray(actions)) {
                 const messageAction = actions.find((a: any) => a.id === 'assistant' || a.action === 'message');
                 if (messageAction && messageAction.props && messageAction.props.content) {
@@ -271,12 +412,13 @@ export const ChatInterface = ({
             setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I encountered an error processing that." }]);
         } finally {
             setIsProcessing(false);
+            isSendingRef.current = false; // Release lock
         }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
+            e.preventDefault(); // Prevent newline
             handleSend();
         }
     };
@@ -423,6 +565,24 @@ export const ChatInterface = ({
         );
     };
 
+    const handleMicClick = () => {
+        if (isListening) {
+            stopListening();
+            console.log("[Chat] Mic stopped by user click");
+        } else {
+            startListening();
+            console.log("[Chat] Mic started by user click");
+        }
+        // Always focus input so user can type or press Enter immediately
+        // Use a small timeout to allow UI to update (e.g. tooltips/state)
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.focus();
+                console.log("[Chat] Input focused after mic toggle");
+            }
+        }, 150);
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Messages Area */}
@@ -483,7 +643,10 @@ export const ChatInterface = ({
                 paddingBottom: 'calc(20px + encodeURIComponent(env(safe-area-inset-bottom)))'
             }}>
                 <button
-                    onClick={isListening ? stopListening : startListening}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    tabIndex={-1}
+                    onClick={handleMicClick}
                     style={{
                         padding: '12px',
                         borderRadius: '50%',
@@ -517,6 +680,7 @@ export const ChatInterface = ({
                 </button>
 
                 <textarea
+                    ref={inputRef}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
@@ -537,6 +701,7 @@ export const ChatInterface = ({
                 />
 
                 <button
+                    type="button"
                     onClick={handleSend}
                     disabled={!inputValue.trim() || isProcessing}
                     style={{

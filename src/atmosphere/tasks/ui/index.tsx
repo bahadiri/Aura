@@ -12,13 +12,15 @@ export interface TasksUIProps {
     tasks: TaskItem[];
     onToggleTask: (id: string | number) => void;
     onAddTask?: (label: string) => void;
+    onPopOut?: () => void;
 }
 
 const TasksUI: React.FC<TasksUIProps> = ({
     title,
     tasks,
     onToggleTask,
-    onAddTask
+    onAddTask,
+    onPopOut
 }) => {
     const [inputValue, setInputValue] = React.useState('');
 
@@ -33,6 +35,21 @@ const TasksUI: React.FC<TasksUIProps> = ({
         <div className={styles.screenContent} style={{ paddingTop: 0 }}>
             <div className={styles.aurSectionTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, marginBottom: 10 }}>
                 <span>{title}</span>
+                {onPopOut && (
+                    <button
+                        onClick={onPopOut}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            opacity: 0.6
+                        }}
+                        title="Pop Out"
+                    >
+                        ↗
+                    </button>
+                )}
             </div>
 
             <div className={styles.scrollArea} style={{ overflowY: 'auto', flex: 1, maxHeight: '100%' }}>

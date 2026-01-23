@@ -8,12 +8,20 @@ import React from 'react';
 const TasksAIR: React.FC<any> = (props) => {
     const logic = useTasksLogic(props);
 
+    const handlePopOut = () => {
+        // Simple window open simulation for now
+        // In a real app, this would use the 'updateWindow' prop to request a pop-out mode from the container
+        // or literally open a window.
+        window.open(window.location.href, '_blank', 'popup,width=400,height=600');
+    };
+
     return (
-        <TasksUI 
-            title= { logic.title }
-    tasks = { logic.tasks }
-    onToggleTask = { logic.toggleTask }
-    onAddTask = { logic.addTask }
+        <TasksUI
+            title={logic.title}
+            tasks={logic.tasks}
+            onToggleTask={logic.toggleTask}
+            onAddTask={logic.addTask}
+            onPopOut={handlePopOut}
         />
     );
 };
