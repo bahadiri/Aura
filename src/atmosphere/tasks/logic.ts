@@ -67,14 +67,17 @@ export const useTasksLogic = (props: UseTasksProps) => {
 
     const toggleTask = (id: string | number) => {
         // Optimistic update
-        const newTasks = tasks.map(t => {
+        const newTasks = tasks.map((t, index) => {
             if (t.id === id) {
                 const updated = { ...t, completed: !t.completed };
                 if (updated.completed) {
-                    flux.dispatch({
-                        type: 'TASK_COMPLETED',
-                        payload: { taskId: id, taskLabel: t.label, windowId },
-                        to: 'all'
+                    // Defer dispatch to avoid setState during render
+                    queueMicrotask(() => {
+                        flux.dispatch({
+                            type: 'TASK_COMPLETED',
+                            payload: { taskId: id, taskLabel: t.label, windowId, taskOrder: index },
+                            to: 'all'
+                        });
                     });
                 }
                 return updated;
@@ -122,6 +125,19 @@ export const useTasksLogic = (props: UseTasksProps) => {
                     setTasks(prev => {
                         const updated = [...prev, ...newItems];
                         persist(updated); // Persist the new state
+
+                        // Dispatch TASK_ADDED event for each new task
+                        newItems.forEach(item => {
+                            queueMicrotask(() => {
+                                console.log(`[TasksAIR] Dispatching TASK_ADDED:`, item.label);
+                                flux.dispatch({
+                                    type: 'TASK_ADDED',
+                                    payload: { taskId: item.id, label: item.label, windowId },
+                                    to: 'all'
+                                });
+                            });
+                        });
+
                         return updated;
                     });
                 }
@@ -135,17 +151,38 @@ export const useTasksLogic = (props: UseTasksProps) => {
                 console.log(`[TasksAIR] Toggling: ${targetLabel}`);
 
                 setTasks(prev => {
-                    const newTasks = prev.map(t => {
+                    const newTasks = prev.map((t, index) => {
                         if (t.label.toLowerCase().includes(targetLabel.toLowerCase())) {
-                            const updated = { ...t, completed: !t.completed };
-                            if (updated.completed) {
+                            // If already completed, don't toggle off (idempotent)
+                            if (t.completed) {
+                                console.log(`[TasksAIR] Task already completed, skipping toggle: ${t.label}`);
+                                return t;
+                            }
+                            const updated = { ...t, completed: true };
+                            // Defer dispatch to avoid setState during render
+                            queueMicrotask(() => {
+                                console.log(`[TasksAIR] Dispatching TASK_COMPLETED for task at index ${index}:`, t.label);
                                 flux.dispatch({
                                     type: 'TASK_COMPLETED',
-                                    payload: { taskId: t.id, taskLabel: t.label, windowId },
+                                    payload: { taskId: t.id, taskLabel: t.label, windowId, taskOrder: index },
                                     to: 'all'
                                 });
-                            }
+                            });
                             return updated;
+                        }
+                        return t;
+                    });
+                    persist(newTasks);
+                    return newTasks;
+                });
+            } else if (msg.type === 'UPDATE_TASK' && (msg.to === 'all' || msg.to === 'tasks-air')) {
+                const targetLabel = msg.payload.label || msg.payload.task;
+                const newLabel = msg.payload.newLabel;
+                if (!targetLabel || !newLabel) return;
+                setTasks(prev => {
+                    const newTasks = prev.map(t => {
+                        if (t.label.toLowerCase().includes(targetLabel.toLowerCase())) {
+                            return { ...t, label: newLabel };
                         }
                         return t;
                     });

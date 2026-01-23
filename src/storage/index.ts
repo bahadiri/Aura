@@ -1,7 +1,7 @@
 export * from './config';
 import { AuraStorageConfig } from './config';
 import { IDocumentStorage, IObjectStorage } from './types';
-import { FileSystemDocumentAdapter, FileSystemObjectAdapter } from './adapters/filesystem';
+import { RemoteDocumentAdapter, RemoteObjectAdapter } from './adapters/remote';
 import { FirebaseDocumentAdapter, FirebaseObjectAdapter } from './adapters/firebase';
 
 // Singleton instance
@@ -22,7 +22,7 @@ export const createStorage = (config: AuraStorageConfig) => {
             break;
         case 'filesystem':
         default:
-            docStorage = new FileSystemDocumentAdapter();
+            docStorage = new RemoteDocumentAdapter();
             break;
     }
 
@@ -33,7 +33,7 @@ export const createStorage = (config: AuraStorageConfig) => {
             break;
         case 'filesystem':
         default:
-            objStorage = new FileSystemObjectAdapter();
+            objStorage = new RemoteObjectAdapter();
             break;
     }
 

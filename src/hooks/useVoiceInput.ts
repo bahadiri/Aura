@@ -192,12 +192,24 @@ export const useVoiceInput = (language: string = 'en-US') => {
             console.log("[Voice] Found voice:", selectedVoice.name);
             utterance.voice = selectedVoice;
         } else {
-            console.warn("[Voice] Voice not found for URI, falling back to lang:", language);
-            // Attempt to find ANY voice for the language as a fallback
-            const langVoice = currentVoices.find(v => v.lang.startsWith(language));
-            if (langVoice) {
-                utterance.voice = langVoice;
-                console.log("[Voice] Fallback to first language match:", langVoice.name);
+            console.warn("[Voice] Voice not found for URI, trying heuristics for:", language);
+
+            // Heuristic 1: Google US English (Standard Good)
+            let bestVoice = currentVoices.find(v => v.name === 'Google US English');
+
+            // Heuristic 2: Microsoft "Natural" Voices
+            if (!bestVoice) {
+                bestVoice = currentVoices.find(v => v.name.includes('Natural') && v.lang.startsWith('en'));
+            }
+
+            // Heuristic 3: Any English voice (fallback)
+            if (!bestVoice) {
+                bestVoice = currentVoices.find(v => v.lang.startsWith(language));
+            }
+
+            if (bestVoice) {
+                utterance.voice = bestVoice;
+                console.log("[Voice] Selected Heuristic Voice:", bestVoice.name);
             }
             utterance.lang = language;
         }

@@ -51,6 +51,8 @@ export const Space: React.FC<SpaceProps> = ({ projectId, userId, onError, mobile
             try {
                 // Use new Aura Storage Abstraction
                 const storage = getStorage();
+                console.log("[Space] Storage Driver:", (storage.documents as any).constructor.name);
+                console.log("[Space] Fetching project:", projectId);
                 const data = await storage.documents.get<AuraProject>('projects', projectId);
 
                 if (data) {
@@ -69,9 +71,18 @@ export const Space: React.FC<SpaceProps> = ({ projectId, userId, onError, mobile
                     }
                     initializedRef.current = true;
                 } else {
-                    const err = new Error(`Project not found: ${projectId}`);
-                    console.error(`[Space] ${err.message}`);
-                    if (onError) onError(err);
+                    console.log(`[Space] Project not found: ${projectId}. Creating on the go...`);
+                    const newProject: AuraProject = {
+                        id: projectId,
+                        name: 'Untitled Project',
+                        user_id: userId || 'anonymous',
+                        state: controller.serialize(),
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+                    await storage.documents.create('projects', newProject);
+                    setProject(newProject);
+                    initializedRef.current = true;
                 }
             } catch (err) {
                 console.error("[Space] Failed to load project", err);

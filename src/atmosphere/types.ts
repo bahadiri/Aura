@@ -16,4 +16,5 @@ export interface AIRManifest {
         tasks?: Record<string, string>; // Specific sub-tasks
     };
     logic?: Record<string, Function>; // Headless functions
+    resources?: Record<string, any>; // API Keys, secrets, etc
 }

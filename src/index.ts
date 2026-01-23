@@ -18,3 +18,4 @@ export { useController } from './controller/useController';
 
 // Storage
 export type { AuraStorageConfig } from './storage/config';
+export { createStorage, getStorage } from './storage';

@@ -92,8 +92,8 @@ export const ChatInterface = ({
 
     // Auto-scroll logic: Only scroll if enabled and new message added OR user was already at bottom
     useEffect(() => {
-        const container = messagesContainerRef.current?.parentElement || messagesContainerRef.current;
-        if (!container || !autoScrollEnabled) {
+        const container = messagesContainerRef.current;
+        if (!container) {
             prevMessagesLength.current = messages.length;
             return;
         }
@@ -101,7 +101,7 @@ export const ChatInterface = ({
         const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 150;
         const isNewMessage = messages.length > prevMessagesLength.current;
 
-        if (isNewMessage || isAtBottom) {
+        if (isNewMessage && (autoScrollEnabled || isAtBottom)) {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -170,6 +170,23 @@ export const ChatInterface = ({
             }
             if (msg.type === 'SPAWN_AIR' || msg.type === 'WINDOW_SPAWNED') {
                 flux.dispatch({ type: 'REQUEST_CONTROLLER_STATE', payload: {}, to: 'controller' });
+            }
+            if (msg.type === 'ADD_CHAT_MESSAGE') {
+                const { role, content, attachment } = msg.payload;
+                setMessages(prev => [...prev, { role, content, attachment }]);
+            }
+            if (msg.type === 'SAY') {
+                const { role, text } = msg.payload;
+                // 1. Add visual message
+                setMessages(prev => [...prev, { role, content: text }]);
+
+                // 2. Speak
+                if (text) {
+                    // Strip emojis and formatting
+                    const cleanForSpeech = text.replace(/[\u{1F600}-\u{1F6FF}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}\u{238C}-\u{2454}]/gu, '').trim();
+                    const speechText = cleanForSpeech.replace(/\*\*/g, '').replace(/`/g, '');
+                    speak(speechText, voiceConfig?.selectedVoiceURI);
+                }
             }
         });
 
@@ -582,11 +599,74 @@ export const ChatInterface = ({
             }
         }, 150);
     };
+    const renderMessageContent = (content: string) => {
+        if (!content) return null;
+        const parts = content.split(/(\*\*.*?\*\*|\[.*?\]\(.*?\))/g);
+        return parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={i}>{part.slice(2, -2)}</strong>;
+            }
+            if (part.startsWith('[') && part.includes('](') && part.endsWith(')')) {
+                const labelMatch = part.match(/\[(.*?)\]/);
+                const urlMatch = part.match(/\((.*?)\)/);
+                const label = labelMatch ? labelMatch[1] : '';
+                const url = urlMatch ? urlMatch[1] : '';
+                return (
+                    <a
+                        key={i}
+                        href={url}
+                        target={url.startsWith('http') ? "_blank" : "_self"}
+                        rel={url.startsWith('http') ? "noopener noreferrer" : ""}
+                        style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 500, cursor: 'pointer' }}
+                        onClick={async (e) => {
+                            if (url.startsWith('file://')) {
+                                e.preventDefault();
+                                const relativePath = url.replace('file://', '');
+                                console.log('[ChatInterface] File link clicked:', relativePath);
+
+                                try {
+                                    // Fetch absolute path from server
+                                    const response = await fetch(`/api/get-file-path?path=${encodeURIComponent(relativePath)}`);
+                                    const data = await response.json();
+
+                                    if (data.vscodeUri) {
+                                        console.log('[ChatInterface] Opening file with VSCode URI:', data.vscodeUri);
+
+                                        // Open with vscode:// URI (with absolute path)
+                                        window.location.href = data.vscodeUri;
+
+                                        // Dispatch event for logging
+                                        flux.dispatch({
+                                            type: 'FILE_LINK_CLICKED',
+                                            payload: {
+                                                url,
+                                                path: relativePath,
+                                                absolutePath: data.absolutePath,
+                                                vscodeUri: data.vscodeUri
+                                            },
+                                            to: 'all'
+                                        });
+                                    }
+                                } catch (err) {
+                                    console.error('[ChatInterface] Failed to open file:', err);
+                                    alert(`Failed to open file: ${relativePath}\n\nPlease open it manually in your editor.`);
+                                }
+                            }
+                        }}
+                    >
+                        {label}
+                    </a>
+                );
+            }
+            return part;
+        });
+    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Messages Area */}
             <div
+                ref={messagesContainerRef}
                 onScroll={handleScroll}
                 style={{
                     flex: 1,
@@ -615,7 +695,7 @@ export const ChatInterface = ({
                                 whiteSpace: 'pre-wrap',
                                 wordBreak: 'break-word'
                             }}>
-                                {msg.content}
+                                {renderMessageContent(msg.content)}
                             </div>
                         )}
                         {msg.attachment && renderAttachment(msg.attachment)}

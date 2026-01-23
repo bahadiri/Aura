@@ -15,6 +15,6 @@ describe('YoutubePlayerAIR View', () => {
         const { getByText } = render(
             <View videoId={undefined} url={null} />
         );
-        expect(getByText(/No Video ID/i)).toBeInTheDocument();
+        expect(getByText(/No Video loaded. Ask to play something./i)).toBeInTheDocument();
     });
 });

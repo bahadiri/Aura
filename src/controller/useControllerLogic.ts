@@ -10,6 +10,7 @@ export function useControllerLogic(initialState?: any) {
     const [windows, setWindows] = useState<WindowState[]>([]);
     const [topZ, setTopZ] = useState(1);
     const [language, setLanguage] = useState<string>('en'); // Default language
+    const [metadata, setMetadata] = useState<any>({});
     const { apiUrl } = useAura();
 
     // Hydrate state on mount if provided
@@ -103,6 +104,9 @@ export function useControllerLogic(initialState?: any) {
                             to: 'all'
                         });
                         break;
+                    case 'SYNC_METADATA':
+                        setMetadata((prev: any) => ({ ...prev, ...msg.payload }));
+                        break;
                     default:
                         break;
                 }
@@ -158,7 +162,8 @@ export function useControllerLogic(initialState?: any) {
         const rawState = {
             windows,
             topZ,
-            language
+            language,
+            metadata
         };
         // JSON roundtrip strips functions, undefined, symbols, etc.
         return JSON.parse(JSON.stringify(rawState));
@@ -169,10 +174,15 @@ export function useControllerLogic(initialState?: any) {
             setWindows(state.windows);
             setTopZ(state.topZ || 10);
             if (state.language) setLanguage(state.language);
+            if (state.metadata) {
+                setMetadata(state.metadata);
+                flux.dispatch({ type: 'METADATA_LOADED', payload: state.metadata, to: 'all' });
+            }
         } else {
             // Explicit Reset for Project Isolation
             setWindows([]);
             setTopZ(1);
+            setMetadata({});
         }
     };
 
@@ -250,6 +260,7 @@ export function useControllerLogic(initialState?: any) {
         updateWindow,
         serialize,
         loadState,
-        getContext
+        getContext,
+        metadata
     };
 }
