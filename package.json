@@ -44,6 +44,18 @@
             "types": "./dist/atmosphere/manifests.d.ts",
             "import": "./dist/atmosphere/manifests.js"
         },
+        "./atmosphere/tasks": {
+            "types": "./dist/atmosphere/tasks/index.d.ts",
+            "import": "./dist/atmosphere/tasks/index.js"
+        },
+        "./atmosphere/note-taker": {
+            "types": "./dist/atmosphere/note-taker/index.d.ts",
+            "import": "./dist/atmosphere/note-taker/index.js"
+        },
+        "./atmosphere/youtube-player": {
+            "types": "./dist/atmosphere/youtube-player/index.d.ts",
+            "import": "./dist/atmosphere/youtube-player/index.js"
+        },
         "./controller/Space": {
             "types": "./dist/controller/Space.d.ts",
             "import": "./dist/controller/Space.js"

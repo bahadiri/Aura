@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAura } from '../../sdk';
 import { resources } from './resources';
+import { getStorage } from '../../storage';
+import { flux } from '../../flux';
 
 export interface UseNoteTakerProps {
     initialValue?: string;
@@ -12,36 +14,105 @@ export interface UseNoteTakerProps {
 }
 
 export const useNoteTakerLogic = ({ initialValue = '', updateWindow, title: initialTitle, content, updateTs }: UseNoteTakerProps) => {
-    const { llm } = useAura(); // Using LLM for polish/title
+    const { llm, sessionId } = useAura(); // Get sessionId for storage
 
     const [value, setValue] = useState(initialValue || '* ');
     const [isPolishing, setIsPolishing] = useState(false);
     const [title, setTitle] = useState(initialTitle || '');
     const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
 
+    // Session Persistence Consts
+    const COLLECTION = `notes_${sessionId || 'default'}`;
+    const DOC_ID = 'main_note';
+
+    // Load from Utils
+    const loadFromStorage = async (): Promise<{ value: string; title: string } | null> => {
+        try {
+            const doc = await getStorage().documents.get(COLLECTION, DOC_ID);
+            return doc as any;
+        } catch (e) {
+            return null;
+        }
+    };
+
+    // Initial Load
+    useEffect(() => {
+        let mounted = true;
+        loadFromStorage().then(data => {
+            if (mounted && data) {
+                if (data.value) setValue(data.value);
+                if (data.title) setTitle(data.title);
+            }
+        });
+        return () => { mounted = false; };
+    }, [sessionId]);
+
+    const persist = async (newValue: string, newTitle: string) => {
+        try {
+            const exists = await getStorage().documents.get(COLLECTION, DOC_ID);
+            if (exists) {
+                await getStorage().documents.update(COLLECTION, DOC_ID, { value: newValue, title: newTitle });
+            } else {
+                await getStorage().documents.create(COLLECTION, { id: DOC_ID, value: newValue, title: newTitle });
+            }
+        } catch (e) {
+            console.error("Persist failed", e);
+        }
+    };
+
+    // Logic for Flux & Context
+    useEffect(() => {
+        if (!flux) return; // Safety check
+
+        const unsubscribe = flux.subscribe((msg: any) => {
+            // Context Provider
+            if (msg.type === 'REQUEST_CONTEXT') {
+                console.log("[NoteTaker] Broadcasting Context");
+                flux.dispatch({
+                    type: 'PROVIDE_CONTEXT',
+                    payload: {
+                        id: 'note-taker-air',
+                        context: {
+                            content: value,
+                            lastUpdated: Date.now()
+                        }
+                    },
+                    to: 'all'
+                });
+            }
+        });
+        return unsubscribe;
+    }, [value]); // Re-subscribe when value changes to ensure context is fresh.
+
     // Handle content appending (for chat-driven note additions)
     useEffect(() => {
         if (content && updateTs) {
             setValue(prev => {
                 const trimmed = prev.trim();
+                let next = prev;
                 // Append with newline if existing content
                 if (trimmed && trimmed !== '*') {
-                    return `${prev}\n${content}`;
+                    next = `${prev}\n${content}`;
+                } else {
+                    next = content;
                 }
-                return content;
+                persist(next, title); // Persist immediately
+                return next;
             });
         }
     }, [content, updateTs]);
 
-    // Persistence
+    // Persistence on Change (Debounced)
     useEffect(() => {
-        if (updateWindow) {
-            const timeoutId = setTimeout(() => {
+        const timeoutId = setTimeout(() => {
+            persist(value, title);
+            // Also sync back to window definition for Layout persistence (Project Scoped) if needed
+            if (updateWindow) {
                 updateWindow({ props: { initialValue: value, title } });
-            }, 1000);
-            return () => clearTimeout(timeoutId);
-        }
-    }, [value, title, updateWindow]);
+            }
+        }, 1000);
+        return () => clearTimeout(timeoutId);
+    }, [value, title]);
 
     // Auto-Title
     useEffect(() => {
