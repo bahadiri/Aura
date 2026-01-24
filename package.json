@@ -1,6 +1,6 @@
 {
     "name": "@minnai/aura",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "A UX for the Gen AI age based on UI Retrieval Philosophy.",
     "keywords": [
         "react",
