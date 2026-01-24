@@ -32,11 +32,25 @@ class Atmosphere {
 
     /**
      * Validate the manifest structure.
+     * Only throws errors for critical missing fields (id).
+     * Uses warnings for non-critical issues to support plug-and-play flexibility.
      */
     private validate(manifest: AIRManifest): void {
-        if (!manifest.id) throw new Error('[Atmosphere] Manifest missing ID');
-        if (!manifest.component) throw new Error(`[Atmosphere] Manifest ${manifest.id} missing Component`);
-        if (!manifest.meta) throw new Error(`[Atmosphere] Manifest ${manifest.id} missing Meta`);
+        // ID is required - can't register without it
+        if (!manifest.id) {
+            console.error('[Atmosphere] CRITICAL: Manifest missing ID - cannot register');
+            throw new Error('[Atmosphere] Manifest missing ID');
+        }
+
+        // Component is highly recommended but not enforced to allow partial manifests
+        if (!manifest.component) {
+            console.warn(`[Atmosphere] Warning: AIR "${manifest.id}" missing Component - this AIR may not render`);
+        }
+
+        // Meta is highly recommended but not enforced
+        if (!manifest.meta) {
+            console.warn(`[Atmosphere] Warning: AIR "${manifest.id}" missing Meta - using defaults`);
+        }
     }
 }
 
@@ -44,4 +58,5 @@ export const atmosphere = new Atmosphere();
 
 import { manifests } from './manifests';
 manifests.forEach(m => atmosphere.register(m));
+
 
