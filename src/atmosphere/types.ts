@@ -15,6 +15,17 @@ export interface AIRManifest {
         system?: string; // System prompt for the AI agent
         tasks?: Record<string, string>; // Specific sub-tasks
     };
+    tools?: Tool[]; // MCP Tool Definitions
     logic?: Record<string, Function>; // Headless functions
     resources?: Record<string, any>; // API Keys, secrets, etc
+}
+
+export interface Tool {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: "object";
+        properties: Record<string, any>;
+        required?: string[];
+    };
 }

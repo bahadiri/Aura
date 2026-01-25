@@ -143,16 +143,21 @@ export const useTasksLogic = (props: UseTasksProps) => {
                 }
             } else if (msg.type === 'TOGGLE_TASK' && (msg.to === 'all' || msg.to === 'tasks-air')) {
                 const targetLabel = msg.payload.label || msg.payload.task;
-                if (!targetLabel) {
-                    console.error('[TasksAIR] TOGGLE_TASK missing label/task in payload:', msg.payload);
+                const targetId = msg.payload.id; // New: Support exact ID match
+
+                if (!targetLabel && !targetId) {
+                    console.error('[TasksAIR] TOGGLE_TASK missing label/task/id in payload:', msg.payload);
                     return;
                 }
 
-                console.log(`[TasksAIR] Toggling: ${targetLabel}`);
+                console.log(`[TasksAIR] Toggling: ${targetId || targetLabel}`);
 
                 setTasks(prev => {
                     const newTasks = prev.map((t, index) => {
-                        if (t.label.toLowerCase().includes(targetLabel.toLowerCase())) {
+                        // Priority: Exact ID match > Fuzzy Label match
+                        const match = targetId ? t.id === targetId : t.label.toLowerCase().includes(targetLabel.toLowerCase());
+
+                        if (match) {
                             // If already completed, don't toggle off (idempotent)
                             if (t.completed) {
                                 console.log(`[TasksAIR] Task already completed, skipping toggle: ${t.label}`);
