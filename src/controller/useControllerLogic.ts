@@ -5,13 +5,15 @@ import { flux } from '../flux/index.js';
 import { FluxMessage } from '../flux/types.js';
 import { WindowState } from './types.js';
 import { findOptimalPosition } from './windowLayout.js';
+import { airSelector } from './selector.js';
+import { stateFetcher } from './stateFetcher.js';
 
 export function useControllerLogic(initialState?: any) {
     const [windows, setWindows] = useState<WindowState[]>([]);
     const [topZ, setTopZ] = useState(1);
     const [language, setLanguage] = useState<string>('en'); // Default language
     const [metadata, setMetadata] = useState<any>({});
-    const { apiUrl } = useAura();
+    const { apiUrl, sessionId } = useAura();
 
     // Hydrate state on mount if provided
     useEffect(() => {
@@ -187,11 +189,45 @@ export function useControllerLogic(initialState?: any) {
     };
 
     const reflect = useCallback(async (message: string, messages: any[] = [], openAIRs: string[] = [], airContext: any = {}) => {
-        const available_airs = atmosphere.getAll().map(m => ({
+        console.log('[Controller] reflect() called with:', { message, openAIRs });
+
+        // T34.2: Client-side AIR selection using Selector Engine
+        const selectedAIRs = airSelector.selectAIRs(message, {
+            limit: 5,
+            activeSet: openAIRs  // Boost currently open AIRs
+        });
+
+        console.log('[Controller] Selected AIRs:', selectedAIRs.map(m => m.id));
+
+        // T34.3: State Injection - Fetch state from open AIRs
+        const openManifests = openAIRs
+            .map(id => atmosphere.get(id))
+            .filter(Boolean) as any[];
+
+        const stateMap = await stateFetcher.fetchMultipleStates(
+            openManifests,
+            sessionId || 'default'
+        );
+
+        // Format state for LLM context
+        const stateContext = stateFetcher.formatStateContext(stateMap, openManifests);
+
+        // Merge state context with existing airContext
+        const enhancedContext = {
+            ...airContext,
+            state: stateMap,
+            stateFormatted: stateContext
+        };
+
+        console.log('[Controller] State Context:', stateContext);
+
+        // Send only selected AIRs to backend (not all AIRs)
+        const available_airs = selectedAIRs.map(m => ({
             id: m.id,
             title: m.meta.title,
             description: m.meta.description,
-            instructions: m.instructions
+            instructions: m.instructions,
+            tools: m.tools  // Include MCP tools
         }));
 
         try {
@@ -199,7 +235,13 @@ export function useControllerLogic(initialState?: any) {
             const res = await fetch(`${apiUrl}/api/chat/reflect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, messages, available_airs, open_airs: openAIRs, additional_context: airContext })
+                body: JSON.stringify({
+                    message,
+                    messages,
+                    available_airs,  // Now filtered by selector
+                    open_airs: openAIRs,
+                    additional_context: enhancedContext  // Now includes state
+                })
             });
 
             if (!res.ok) {
@@ -214,6 +256,13 @@ export function useControllerLogic(initialState?: any) {
             const actions = await res.json();
 
             if (Array.isArray(actions)) {
+                // Mark used AIRs as active for future selections
+                for (const action of actions) {
+                    if (action.id && action.id.endsWith('-air')) {
+                        airSelector.markAsUsed(action.id);
+                    }
+                }
+
                 // Chat-First UX: Do NOT auto-spawn. Return actions for ChatInterface to render inline.
                 return actions;
             }
@@ -223,7 +272,7 @@ export function useControllerLogic(initialState?: any) {
             return [{ action: 'message', id: 'assistant', props: { content: "Sorry, I encountered an error processing that." } }];
         }
         return [];
-    }, [apiUrl]); // Only re-create if apiUrl changes. spawnWindow is stable or not needed here.
+    }, [apiUrl, sessionId]); // Re-create if apiUrl or sessionId changes
 
     const getContext = useCallback(() => {
         const context: any = {

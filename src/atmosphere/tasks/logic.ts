@@ -66,21 +66,10 @@ export const useTasksLogic = (props: UseTasksProps) => {
     // + optimistic updates from ChatInterface is key.
 
     const toggleTask = (id: string | number) => {
-        // Optimistic update
-        const newTasks = tasks.map((t, index) => {
+        // Optimistic update - toggle task completion
+        const newTasks = tasks.map(t => {
             if (t.id === id) {
-                const updated = { ...t, completed: !t.completed };
-                if (updated.completed) {
-                    // Defer dispatch to avoid setState during render
-                    queueMicrotask(() => {
-                        flux.dispatch({
-                            type: 'TASK_COMPLETED',
-                            payload: { taskId: id, taskLabel: t.label, windowId, taskOrder: index },
-                            to: 'all'
-                        });
-                    });
-                }
-                return updated;
+                return { ...t, completed: !t.completed };
             }
             return t;
         });
@@ -99,102 +88,62 @@ export const useTasksLogic = (props: UseTasksProps) => {
         persist(newTasks);
     };
 
-    // Listen for Chat Commands
+    // Listen for MCP Tool Commands via Flux
     useEffect(() => {
         const unsubscribe = flux.subscribe((msg: any) => {
             console.log(`[TasksAIR ${windowId || 'inline'}] Flux Msg:`, msg.type);
 
-            if (msg.type === 'ADD_TASK' && (msg.to === 'all' || msg.to === 'tasks-air')) {
-                let itemsToAdd: string[] = [];
-                // Robust parsing of payload
-                if (Array.isArray(msg.payload.tasks)) itemsToAdd = msg.payload.tasks;
-                else if (Array.isArray(msg.payload.items)) itemsToAdd = msg.payload.items;
-                else if (msg.payload.label) itemsToAdd = [msg.payload.label];
-                else if (msg.payload.task) itemsToAdd = [msg.payload.task];
-
-                console.log(`[TasksAIR] Adding items:`, itemsToAdd);
-
-                if (itemsToAdd.length > 0) {
-                    const newItems = itemsToAdd.map(label => ({
-                        id: crypto.randomUUID(),
-                        label,
-                        completed: false
-                    }));
-
-                    // Use functional update to get latest state from closure
-                    setTasks(prev => {
-                        const updated = [...prev, ...newItems];
-                        persist(updated); // Persist the new state
-
-                        // Dispatch TASK_ADDED event for each new task
-                        newItems.forEach(item => {
-                            queueMicrotask(() => {
-                                console.log(`[TasksAIR] Dispatching TASK_ADDED:`, item.label);
-                                flux.dispatch({
-                                    type: 'TASK_ADDED',
-                                    payload: { taskId: item.id, label: item.label, windowId },
-                                    to: 'all'
-                                });
-                            });
-                        });
-
-                        return updated;
-                    });
-                }
-            } else if (msg.type === 'TOGGLE_TASK' && (msg.to === 'all' || msg.to === 'tasks-air')) {
-                const targetLabel = msg.payload.label || msg.payload.task;
-                const targetId = msg.payload.id; // New: Support exact ID match
-
-                if (!targetLabel && !targetId) {
-                    console.error('[TasksAIR] TOGGLE_TASK missing label/task/id in payload:', msg.payload);
+            // MCP Tool: create_task
+            if (msg.type === 'create_task' && (msg.to === 'all' || msg.to === 'tasks-air')) {
+                console.log('[TasksAIR] create_task handler triggered, payload:', msg.payload);
+                const title = msg.payload.title;
+                if (!title) {
+                    console.error('[TasksAIR] create_task missing title:', msg.payload);
                     return;
                 }
 
-                console.log(`[TasksAIR] Toggling: ${targetId || targetLabel}`);
+                console.log('[TasksAIR] Creating task with title:', title);
+                const newTask: TaskItem = {
+                    id: crypto.randomUUID(),
+                    label: title,
+                    completed: false
+                };
 
                 setTasks(prev => {
-                    const newTasks = prev.map((t, index) => {
-                        // Priority: Exact ID match > Fuzzy Label match
-                        const match = targetId ? t.id === targetId : t.label.toLowerCase().includes(targetLabel.toLowerCase());
-
-                        if (match) {
-                            // If already completed, don't toggle off (idempotent)
-                            if (t.completed) {
-                                console.log(`[TasksAIR] Task already completed, skipping toggle: ${t.label}`);
-                                return t;
-                            }
-                            const updated = { ...t, completed: true };
-                            // Defer dispatch to avoid setState during render
-                            queueMicrotask(() => {
-                                console.log(`[TasksAIR] Dispatching TASK_COMPLETED for task at index ${index}:`, t.label);
-                                flux.dispatch({
-                                    type: 'TASK_COMPLETED',
-                                    payload: { taskId: t.id, taskLabel: t.label, windowId, taskOrder: index },
-                                    to: 'all'
-                                });
-                            });
-                            return updated;
-                        }
-                        return t;
-                    });
-                    persist(newTasks);
-                    return newTasks;
+                    console.log('[TasksAIR] Previous tasks:', prev.length, 'Adding:', title);
+                    const updated = [...prev, newTask];
+                    persist(updated);
+                    console.log('[TasksAIR] Updated tasks:', updated.length);
+                    return updated;
                 });
-            } else if (msg.type === 'UPDATE_TASK' && (msg.to === 'all' || msg.to === 'tasks-air')) {
-                const targetLabel = msg.payload.label || msg.payload.task;
-                const newLabel = msg.payload.newLabel;
-                if (!targetLabel || !newLabel) return;
+            }
+
+            // MCP Tool: complete_task
+            else if (msg.type === 'complete_task' && (msg.to === 'all' || msg.to === 'tasks-air')) {
+                const targetId = msg.payload.id;
+                if (!targetId) {
+                    console.error('[TasksAIR] complete_task missing id:', msg.payload);
+                    return;
+                }
+
                 setTasks(prev => {
                     const newTasks = prev.map(t => {
-                        if (t.label.toLowerCase().includes(targetLabel.toLowerCase())) {
-                            return { ...t, label: newLabel };
+                        if (t.id === targetId) {
+                            if (t.completed) {
+                                console.log(`[TasksAIR] Task already completed, skipping: ${t.label}`);
+                                return t;
+                            }
+                            return { ...t, completed: true };
                         }
                         return t;
                     });
                     persist(newTasks);
                     return newTasks;
                 });
-            } else if (msg.type === 'REQUEST_CONTEXT') {
+            }
+
+            // REQUEST_CONTEXT: Provide current state for LLM
+            else if (msg.type === 'REQUEST_CONTEXT') {
                 // Generic Generic Context Provider
                 // Broadcast full state so Chat can see what we have
                 flux.dispatch({

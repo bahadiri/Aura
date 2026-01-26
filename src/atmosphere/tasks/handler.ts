@@ -1,33 +1,32 @@
 import { flux } from '../../flux';
 import { getStorage } from '../../storage';
 
+// Note: Component is exported from index.tsx
+// We can't re-export it here directly because .ts files can't import from .tsx in the same directory
+// Consumers should import from './tasks/index.tsx' or use the barrel export from manifests.ts
+
 /**
  * The Kitchen: Implementation of the TasksAIR logic.
  * Routes strictly typed MCP calls to internal Flux events or direct storage actions.
  */
 export async function handleRequest(tool: string, args: any) {
     if (tool === 'create_task') {
-        const title = args.title;
-        // Dispatch to internal UI logic
+        // Forward MCP tool call via Flux using the SAME tool name
         flux.dispatch({
-            type: 'ADD_TASK',
-            payload: { task: title },
+            type: 'create_task',
+            payload: args,
             to: 'tasks-air'
         });
-        return { content: [{ type: 'text', text: `Task created: "${title}"` }] };
+        return { content: [{ type: 'text', text: `Task created: "${args.title}"` }] };
 
     } else if (tool === 'complete_task') {
-        const id = args.id;
-        // The current Flux logic uses 'label' for toggling because IDs aren't fully stable in V1.
-        // For V2 reference implementation, we'll try to use the label from args if ID isn't found, 
-        // effectively matching the 'toggle_task' logic of legacy.
-
+        // Forward MCP tool call via Flux using the SAME tool name
         flux.dispatch({
-            type: 'TOGGLE_TASK',
-            payload: { task: id }, // Legacy logic receives 'task' which acts as label matcher
+            type: 'complete_task',
+            payload: args,
             to: 'tasks-air'
         });
-        return { content: [{ type: 'text', text: `Task completed via signal.` }] };
+        return { content: [{ type: 'text', text: `Task completed.` }] };
 
     } else if (tool === 'list_tasks') {
         // Direct "Data-First" observation fallback (if injection fails)

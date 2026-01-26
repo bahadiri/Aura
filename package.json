@@ -81,10 +81,11 @@
         "dev": "vite",
         "build": "tsc -p tsconfig.build.json && npm run copy-styles",
         "copy-styles": "npx copyfiles -u 1 \"src/**/*.css\" dist",
+        "aura-validate": "py ../ops/scripts/package_validator.py .",
         "build:vite": "vite build",
         "preview": "vite preview",
         "test": "vitest run",
-        "prepublishOnly": "npm run build"
+        "prepublishOnly": "npm run aura-validate && npm run build"
     },
     "dependencies": {
         "idb-keyval": "^6.2.2",

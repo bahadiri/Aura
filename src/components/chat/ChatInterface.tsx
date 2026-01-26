@@ -275,8 +275,53 @@ export const ChatInterface = ({
                 console.log("[Chat] Active Windows:", controller.windows);
 
                 const spawnedThisLoop = new Set<string>();
+                const toolCallsToDefer: any[] = [];
 
                 actions.forEach((action: any) => {
+                    // Handle assistant messages with attachments FIRST
+                    if (action.id === 'assistant' && action.props?.attachment) {
+                        const attachment = action.props.attachment;
+                        console.log(`[Chat] Assistant message has attachment:`, attachment);
+
+                        // Spawn the AIR inline
+                        if (!activeAIRs.includes(attachment.id) && !spawnedThisLoop.has(attachment.id)) {
+                            console.log(`[Chat] Opening ${attachment.id} inline`);
+                            spawnedThisLoop.add(attachment.id);
+                            setMessages(prev => [...prev, {
+                                role: 'assistant',
+                                content: action.props.content || '',
+                                attachment: {
+                                    id: attachment.id,
+                                    props: {},
+                                    instanceId: attachment.instanceId || crypto.randomUUID()
+                                }
+                            }]);
+                        }
+                        return;
+                    }
+
+                    // Defer tool calls for newly spawned AIRs
+                    if (action.action === 'call_tool') {
+                        if (spawnedThisLoop.has(action.id)) {
+                            console.log(`[Chat] Deferring tool call ${action.tool} on ${action.id} (AIR just spawned)`);
+                            toolCallsToDefer.push(action);
+                        } else {
+                            console.log(`[Chat] Calling tool ${action.tool} on ${action.id}`, action.props);
+
+                            // Get the AIR manifest
+                            const manifest = atmosphere.get(action.id);
+                            if (manifest && manifest.logic?.handleRequest) {
+                                console.log(`[Chat] Routing to ${action.id} Kitchen`);
+
+                                // Call the AIR's handleRequest ("Kitchen")
+                                manifest.logic.handleRequest(action.tool, action.props);
+                            } else {
+                                console.warn(`[Chat] No handleRequest found for ${action.id}`);
+                            }
+                        }
+                        return;
+                    }
+
                     if (action.id === 'assistant') return;
 
                     // Broad Handling for TasksAIR Actions
@@ -404,6 +449,24 @@ export const ChatInterface = ({
                         }
                     }]);
                 });
+
+                // Process deferred tool calls after AIRs have mounted
+                if (toolCallsToDefer.length > 0) {
+                    console.log(`[Chat] Processing ${toolCallsToDefer.length} deferred tool calls after delay`);
+                    setTimeout(() => {
+                        toolCallsToDefer.forEach((action) => {
+                            console.log(`[Chat] Calling deferred tool ${action.tool} on ${action.id}`, action.props);
+
+                            const manifest = atmosphere.get(action.id);
+                            if (manifest && manifest.logic?.handleRequest) {
+                                console.log(`[Chat] Routing deferred call to ${action.id} Kitchen`);
+                                manifest.logic.handleRequest(action.tool, action.props);
+                            } else {
+                                console.warn(`[Chat] No handleRequest found for ${action.id}`);
+                            }
+                        });
+                    }, 100); // Small delay to allow React to mount the components
+                }
             }
 
             // 5. TEXT RESPONSE (Assistant Message)
