@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentChatId,
 
     return (
         <div style={{
-            width: isOpen ? 280 : 60,
+            width: isOpen ? 240 : 0,
             height: '100%',
             backgroundColor: 'var(--bg-sidebar)',
             borderRight: '1px solid var(--border-subtle)',
@@ -52,22 +52,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentChatId,
             {/* Toggle Header */}
             <div style={{
                 height: '60px',
-                display: 'flex',
+                display: isOpen ? 'flex' : 'block',
                 alignItems: 'center',
                 justifyContent: isOpen ? 'space-between' : 'center',
                 padding: isOpen ? '0 16px' : '0',
-                borderBottom: '1px solid var(--border-subtle)',
-                backgroundColor: 'rgba(0, 0, 0, 0.02)'
+                borderBottom: isOpen ? '1px solid var(--border-subtle)' : 'none',
+                backgroundColor: isOpen ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                position: isOpen ? 'static' : 'absolute',
+                left: isOpen ? 0 : 10,
+                top: 10,
+                width: isOpen ? 'auto' : '40px',
+                zIndex: 101,
+                pointerEvents: 'auto'
             }}>
                 {isOpen && <span style={{ fontWeight: 700, whiteSpace: 'nowrap', fontSize: '1.1rem', color: 'var(--text-primary)' }}>Aura Space</span>}
                 <button
                     onClick={toggle}
                     title={isOpen ? "Collapse Sidebar" : "Expand Sidebar"}
                     style={{
-                        background: isOpen ? 'transparent' : 'var(--accent-primary, #646cff)',
+                        background: isOpen ? 'transparent' : 'var(--bg-sidebar)',
                         border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
-                        color: isOpen ? 'var(--text-primary)' : '#fff',
+                        color: 'var(--text-primary)',
                         cursor: 'pointer',
                         fontSize: '1.4rem',
                         width: '36px',
@@ -76,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentChatId,
                         alignItems: 'center',
                         justifyContent: 'center',
                         transition: 'all 0.2s ease',
-                        boxShadow: isOpen ? 'none' : '0 4px 12px rgba(0,0,0,0.3)'
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}>
                     {isOpen ? '«' : '»'}
                 </button>
@@ -189,29 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentChatId,
                 </>
             )}
 
-            {/* Collapsed Vertical Text */}
-            {!isOpen && (
-                <div
-                    onClick={toggle}
-                    style={{
-                        padding: '20px 0',
-                        color: 'var(--text-secondary)',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        letterSpacing: '2px',
-                        writingMode: 'vertical-rl',
-                        textOrientation: 'mixed',
-                        textTransform: 'uppercase',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        userSelect: 'none'
-                    }}
-                >
-                    CHATS
-                </div>
-            )}
+
         </div>
     );
 };

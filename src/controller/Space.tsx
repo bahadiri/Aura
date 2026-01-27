@@ -200,7 +200,7 @@ export const Space: React.FC<SpaceProps> = ({ projectId: initialProjectId, userI
             Title:`;
 
             const res = await llm.invoke(
-                { model: "gemini-1.5-flash", mode: "chat" },
+                { model: "gemini-2.5-flash", mode: "chat" },
                 { messages: [{ role: "user", content: prompt }] }
             );
 
@@ -272,6 +272,22 @@ export const Space: React.FC<SpaceProps> = ({ projectId: initialProjectId, userI
                 onSelectChat={(id) => setCurrentChatId(id)}
                 onNewChat={() => setCurrentChatId(crypto.randomUUID())}
             />
+
+            {/* Left Chat Panel */}
+            <div style={{
+                width: 380,
+                height: '100%',
+                backgroundColor: 'var(--bg-sidebar)',
+                borderRight: '1px solid var(--border-subtle)',
+                display: 'flex',
+                flexDirection: 'column',
+                zIndex: 100
+            }}>
+                <ChatInterface
+                    key={currentChatId}
+                    initialMessages={project?.state?.chat?.messages || []}
+                />
+            </div>
 
             <div style={{ flex: 1, height: '100%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'margin-left 0.3s ease' }}>
                 {/* Main Desktop Area */}
@@ -357,22 +373,6 @@ export const Space: React.FC<SpaceProps> = ({ projectId: initialProjectId, userI
                         </div>
                     ))}
                 </div>
-            </div>
-
-            {/* Right Chat Panel */}
-            <div style={{
-                width: 380,
-                height: '100%',
-                backgroundColor: 'var(--bg-sidebar)',
-                borderLeft: '1px solid var(--border-subtle)',
-                display: 'flex',
-                flexDirection: 'column',
-                zIndex: 100
-            }}>
-                <ChatInterface
-                    key={currentChatId}
-                    initialMessages={project?.state?.chat?.messages || []}
-                />
             </div>
 
             {saving && (
