@@ -8,10 +8,5 @@ export const ImageManifest: Omit<AIRManifest, 'component'> = {
         description: 'Displays a single image with a title.',
         width: 400,
         height: 500
-    },
-    discovery: {
-        keywords: ['image', 'photo', 'picture', 'poster', 'show me'],
-        category: 'media',
-        priority: 60
     }
 };

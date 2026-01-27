@@ -132,7 +132,7 @@ export const ChatInterface = ({
                 messages,
                 poppedOutIds: Array.from(poppedOutIds)
             },
-            to: 'chat-space' // Space listens for this
+            to: 'space' // Space listens for this
         });
     }, [messages, poppedOutIds]);
 
@@ -166,7 +166,7 @@ export const ChatInterface = ({
             if (msg.type === 'CONTROLLER_STATE') {
                 const windows = msg.payload.windows || [];
                 setSpaceAIRs(windows.map((w: any) => w.manifestId));
-                console.log("[Chat] Synced Chat AIRs:", windows.map((w: any) => w.manifestId));
+                console.log("[Chat] Synced Space AIRs:", windows.map((w: any) => w.manifestId));
             }
             if (msg.type === 'SPAWN_AIR' || msg.type === 'WINDOW_SPAWNED') {
                 flux.dispatch({ type: 'REQUEST_CONTROLLER_STATE', payload: {}, to: 'controller' });
@@ -259,7 +259,8 @@ export const ChatInterface = ({
         };
 
         try {
-            console.log("Reflecting on chat:", text);
+            // 3. REFLECTION STEP
+            console.log("Reflecting on:", text);
             const airContext = await gatherContext();
             console.log("Active AIRs:", activeAIRs, "Context:", airContext);
 
