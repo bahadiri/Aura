@@ -263,9 +263,9 @@ ACTIONS SCHEMA:
   { "action": "tool_call", "id": "air-id", "tool": "tool_name", "args": { ... } }
 ]`;
 
-            console.log("[Controller] Invoking Gemini reflection via:", `${apiUrl}/v1beta/models/gemini-1.5-flash:generateContent`);
+            console.log("[Controller] Invoking Gemini reflection via:", `${apiUrl}/v1beta/models/gemini-2.5-flash:generateContent`);
 
-            const res = await fetch(`${apiUrl}/v1beta/models/gemini-1.5-flash:generateContent`, {
+            const res = await fetch(`${apiUrl}/v1beta/models/gemini-2.5-flash:generateContent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
