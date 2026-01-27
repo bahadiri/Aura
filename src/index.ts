@@ -1,3 +1,4 @@
+console.log("[Aura] Library Index Loading...");
 export * from './sdk';
 export * from './components/chat';
 export { Space } from './controller/Space';

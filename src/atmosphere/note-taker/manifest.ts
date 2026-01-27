@@ -10,6 +10,11 @@ export const NoteTakerManifest: Omit<AIRManifest, 'component'> = {
         height: 700,
         startPosition: 'center'
     },
+    discovery: {
+        keywords: ['note', 'write', 'save', 'extract', 'persist', 'workspace', 'memory'],
+        category: 'productivity',
+        priority: 80
+    },
     instructions: {
         tasks: {
             'append_note': 'Add text to the bottom of the notes. Payload: `{ content: string }`. Use this for "add", "extract", or "new note" requests.',

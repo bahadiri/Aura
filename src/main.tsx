@@ -48,9 +48,10 @@ createStorage(storageConfig);
 const auraConfig = {
     // Default to localhost for dev, but allow override via env
     llm: {
-        gatewayUrl: import.meta.env.VITE_AURA_LLM_GATEWAY || 'http://127.0.0.1:4000',
+        gatewayUrl: import.meta.env.VITE_AURA_LLM_GATEWAY || 'http://127.0.0.1:4000/aura-stack/us-central1/auraProxy',
         proxyUrl: import.meta.env.VITE_AURA_API_PROXY || 'http://127.0.0.1:8001/api/proxy'
     },
+    apiUrl: import.meta.env.VITE_AURA_API_URL || import.meta.env.VITE_AURA_LLM_GATEWAY || 'http://127.0.0.1:4000/aura-stack/us-central1/auraProxy',
     storage: storageConfig
 };
 

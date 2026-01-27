@@ -9,7 +9,7 @@
     - generic [ref=e10]: No chats yet
   - generic [ref=e15]:
     - generic [ref=e16]:
-      - generic [ref=e18]: Who are the characters in Titanic?
+      - generic [ref=e18]: Show me the Titanic poster
       - generic [ref=e20]: Sorry, I encountered an error processing that. Please try again.
     - generic [ref=e21]:
       - button "🎤" [ref=e22] [cursor=pointer]

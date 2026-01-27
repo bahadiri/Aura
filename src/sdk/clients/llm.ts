@@ -8,7 +8,7 @@ export class LiteLLMClient implements ILlmClient {
     }
 
     async invoke(resource: ILlmResourceConfig, request: ILlmRequest): Promise<ILlmResponse> {
-        const url = `${this.gatewayUrl}/chat/completions`;
+        const url = `${this.gatewayUrl}/v1/chat/completions`;
 
         // Merge system prompt if present in resource
         let messages = [...request.messages];

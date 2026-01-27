@@ -2,9 +2,17 @@
 
 ```yaml
 - generic [ref=e4]:
-  - heading "Welcome to Saga" [level=1] [ref=e5]
-  - paragraph [ref=e6]: Sign in to continue to your workspace
-  - button "Sign in with Google" [ref=e7] [cursor=pointer]:
-    - img [ref=e8]
-    - text: Sign in with Google
+  - generic [ref=e5]:
+    - button "+ New Chat" [ref=e7] [cursor=pointer]:
+      - generic [ref=e8]: +
+      - text: New Chat
+    - generic [ref=e10]: No chats yet
+  - generic [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e18]: Show me the Titanic trailer
+      - generic [ref=e20]: Sorry, I encountered an error processing that. Please try again.
+    - generic [ref=e21]:
+      - button "🎤" [ref=e22] [cursor=pointer]
+      - textbox "Type or speak..." [ref=e23]
+      - button "Send" [disabled] [ref=e24]
 ```

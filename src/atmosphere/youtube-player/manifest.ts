@@ -8,5 +8,10 @@ export const YoutubePlayerManifest: Omit<AIRManifest, 'component'> = {
         description: 'Embeds a YouTube video.',
         width: 480,
         height: 320
+    },
+    discovery: {
+        keywords: ['video', 'youtube', 'trailer', 'play', 'watch', 'movie'],
+        category: 'media',
+        priority: 60
     }
 };
