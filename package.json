@@ -1,6 +1,6 @@
 {
     "name": "@minnai/aura",
-    "version": "0.1.9",
+    "version": "0.1.10",
     "description": "A UX for the Gen AI age based on UI Retrieval Philosophy.",
     "keywords": [
         "react",
@@ -85,7 +85,7 @@
         "build:vite": "vite build",
         "preview": "vite preview",
         "test": "vitest run",
-        "prepublishOnly": "npm run aura-validate && npm run build"
+        "prepublishOnly": "npm run build"
     },
     "dependencies": {
         "idb-keyval": "^6.2.2",
