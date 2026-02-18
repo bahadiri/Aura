@@ -1,6 +1,6 @@
 {
     "name": "@minnai/aura",
-    "version": "0.1.12",
+    "version": "0.1.13",
     "description": "A UX for the Gen AI age based on UI Retrieval Philosophy.",
     "keywords": [
         "react",
@@ -75,6 +75,10 @@
         "./storage/config": {
             "types": "./dist/storage/config.d.ts",
             "import": "./dist/storage/config.js"
+        },
+        "./components/Sidebar": {
+            "types": "./dist/components/Sidebar.d.ts",
+            "import": "./dist/components/Sidebar.js"
         }
     },
     "scripts": {

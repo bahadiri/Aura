@@ -221,19 +221,32 @@ export const Space: React.FC<SpaceProps> = ({ projectId: initialProjectId, userI
 
     useEffect(() => {
         const unsubscribe = flux.subscribe((msg: FluxMessage) => {
+            console.log(`[Space] Flux message received:`, msg.type, msg.to);
+
             if (msg.type === 'CHAT_PROMPT' && msg.to === 'assistant') {
-                if (!project) return;
+                console.log(`[Space] CHAT_PROMPT detected, project:`, project?.name, 'id:', currentChatId);
+                if (!project) {
+                    console.log(`[Space] No project loaded, skipping auto-rename`);
+                    return;
+                }
 
                 promptCount.current += 1;
                 accumulatedPrompts.current.push(msg.payload.text);
-                console.log(`[Space] Prompt ${promptCount.current}: "${msg.payload.text.substring(0, 50)}..."`);
+                console.log(`[Space] Prompt ${promptCount.current}: "${msg.payload.text.substring(0, 50)}..." (project: ${project.name})`);
 
                 // Trigger at 2 messages (first rename)
-                if (promptCount.current === 2 && (project.name === 'Untitled Chat' || project.name === 'Untitled Project')) {
-                    generateTitle();
+                if (promptCount.current === 2) {
+                    console.log(`[Space] Checking rename condition: name="${project.name}"`);
+                    if (project.name === 'Untitled Chat' || project.name === 'Untitled Project') {
+                        console.log(`[Space] Triggering generateTitle()`);
+                        generateTitle();
+                    } else {
+                        console.log(`[Space] Skipping rename - name already set: "${project.name}"`);
+                    }
                 }
                 // Update at 10 messages (refine based on more context)
                 else if (promptCount.current === 10 && lastRenameAt.current < 10) {
+                    console.log(`[Space] Triggering generateTitle() at 10 prompts`);
                     generateTitle();
                 }
             }
@@ -262,6 +275,34 @@ export const Space: React.FC<SpaceProps> = ({ projectId: initialProjectId, userI
 
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', display: 'flex' }}>
+            {/* Fixed Sidebar Toggle Button - Always visible */}
+            {!isSidebarOpen && (
+                <button
+                    onClick={() => setIsSidebarOpen(true)}
+                    title="Open Sidebar"
+                    style={{
+                        position: 'fixed',
+                        left: 10,
+                        top: 10,
+                        zIndex: 9999,
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        border: '1px solid var(--border-subtle)',
+                        backgroundColor: 'var(--bg-sidebar)',
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.4rem',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                    }}
+                >
+                    »
+                </button>
+            )}
+
             {/* Left Sidebar */}
             <Sidebar
                 isOpen={isSidebarOpen}
